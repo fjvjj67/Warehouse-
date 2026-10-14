@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>خريطة المخزن 3D - AZAWI</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root {
+  --bg: #f4f5f7; --panel: #ffffff; --border: #e0e2e7; --border-strong: #c7cad1;
+  --text: #1a1c22; --text-secondary: #5c6070; --text-muted: #9497a3;
+  --accent: #2563eb; --accent-dark: #1d4ed8;
+  --success-bg: #e8f7ee; --success-text: #16793f;
+  --danger-bg: #fdeceb; --danger-text: #c22a1f;
+  --warn-bg: #fff6dd; --warn-text: #92660a;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111319; --panel: #1a1d26; --border: #2b2f3a; --border-strong: #3a3f4d;
+    --text: #eef0f4; --text-secondary: #a4a8b5; --text-muted: #6f7482;
+    --accent: #4d84ff; --accent-dark: #6c98ff;
+    --success-bg: #113321; --success-text: #52d98a;
+    --danger-bg: #3a1815; --danger-text: #ff8478;
+    --warn-bg: #3a2e0d; --warn-text: #f0c257;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111319; --panel: #1a1d26; --border: #2b2f3a; --border-strong: #3a3f4d;
+  --text: #eef0f4; --text-secondary: #a4a8b5; --text-muted: #6f7482;
+  --accent: #4d84ff; --accent-dark: #6c98ff;
+  --success-bg: #113321; --success-text: #52d98a;
+  --danger-bg: #3a1815; --danger-text: #ff8478;
+  --warn-bg: #3a2e0d; --warn-text: #f0c257;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,Arial,sans-serif; background:var(--bg); color:var(--text);
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
+.app { display:flex; flex-direction:column; height:100%; }
+.topbar { background:var(--panel); border-bottom:1px solid var(--border); padding:10px 12px; display:flex; gap:8px; align-items:center; flex-shrink:0; }
+.topbar input { flex:1; padding:10px 12px; border:1px solid var(--border-strong); border-radius:8px; font-size:15px; background:var(--bg); color:var(--text); min-width:0; }
+.topbar input:focus { outline:none; border-color:var(--accent); }
+.topbar button { padding:10px 14px; border:none; border-radius:8px; background:var(--accent); color:#fff; font-size:14px; font-weight:600; cursor:pointer; white-space:nowrap; }
+.topbar button:active { background:var(--accent-dark); }
+.body-area { flex:1; display:flex; min-height:0; position:relative; }
+.canvas-wrap { flex:1; position:relative; background:var(--panel); }
+#canvas-container { width:100%; height:100%; touch-action:none; }
+.room-chips { display:flex; gap:6px; overflow-x:auto; padding:8px 12px; background:var(--panel); border-bottom:1px solid var(--border); flex-shrink:0; -webkit-overflow-scrolling:touch; }
+.room-chip { flex-shrink:0; padding:6px 12px; border-radius:999px; border:1px solid var(--border-strong); background:var(--bg); color:var(--text-secondary); font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; }
+.room-chip.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+.top-view-btn { position:absolute; top:12px; left:12px; background:var(--panel); border:1px solid var(--border-strong); border-radius:8px; padding:8px 12px; font-size:13px; font-weight:600; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.1); z-index:5; }
+.result-panel { position:absolute; bottom:12px; left:12px; right:12px; background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); display:none; max-height:45%; overflow-y:auto; }
+.result-panel.show { display:block; }
+.result-header { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:10px; }
+.result-title { font-size:16px; font-weight:700; }
+.result-sku { font-size:12px; color:var(--text-muted); font-family:monospace; }
+.close-btn { background:none; border:none; font-size:20px; color:var(--text-muted); cursor:pointer; line-height:1; padding:4px; }
+.location-code { display:inline-block; background:var(--warn-bg); color:var(--warn-text); font-weight:700; font-size:15px; padding:6px 12px; border-radius:8px; font-family:monospace; margin-bottom:10px; }
+.info-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
+.info-item { background:var(--bg); border-radius:8px; padding:8px 10px; }
+.info-item .l { font-size:11px; color:var(--text-muted); }
+.info-item .v { font-size:15px; font-weight:700; margin-top:2px; }
+.badge { display:inline-block; padding:5px 12px; border-radius:8px; font-size:13px; font-weight:700; }
+.badge.ok { background:var(--success-bg); color:var(--success-text); }
+.badge.out { background:var(--danger-bg); color:var(--danger-text); }
+.not-found { position:absolute; bottom:12px; left:12px; right:12px; background:var(--danger-bg); color:var(--danger-text); border-radius:12px; padding:14px; font-size:14px; font-weight:600; display:none; }
+.not-found.show { display:block; }
+.hint-bar { padding:8px 12px; font-size:12px; color:var(--text-muted); background:var(--panel); border-top:1px solid var(--border); text-align:center; flex-shrink:0; }
+.stats { font-size:11px; color:var(--text-muted); padding:0 12px 8px; background:var(--panel); }
+
+.app { position:relative; }
+.suggest { position:absolute; left:8px; right:8px; top:58px; z-index:30; background:var(--panel); border:1px solid var(--border-strong); border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,0.18); max-height:55%; overflow-y:auto; display:none; }
+.sg-item { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 12px; border-bottom:1px solid var(--border); cursor:pointer; }
+.sg-item:last-child { border-bottom:none; }
+.sg-item:active { background:var(--bg); }
+.sg-name { font-size:14px; font-weight:700; }
+.sg-sku { font-size:11px; color:var(--text-muted); font-family:monospace; margin-top:2px; }
+.sg-loc { font-size:12px; font-weight:700; font-family:monospace; background:var(--warn-bg); color:var(--warn-text); padding:4px 8px; border-radius:6px; white-space:nowrap; }
+.sg-empty { padding:14px; font-size:13px; color:var(--text-muted); text-align:center; }
+
+.edit-btn { background:var(--bg); border:1px solid var(--border-strong); color:var(--text); font-size:12px; font-weight:700; padding:6px 10px; border-radius:8px; cursor:pointer; }
+.edit-form { display:none; margin-top:10px; border-top:1px solid var(--border); padding-top:10px; }
+.edit-form.show { display:block; }
+.edit-row { display:flex; gap:8px; margin-bottom:8px; }
+.edit-row > div { flex:1; }
+.edit-row label { display:block; font-size:11px; color:var(--text-muted); margin-bottom:4px; }
+.edit-row select { width:100%; padding:8px; border:1px solid var(--border-strong); border-radius:6px; background:var(--bg); color:var(--text); font-size:14px; }
+.edit-actions { display:flex; gap:8px; }
+.edit-actions button { flex:1; padding:9px; border-radius:8px; border:none; font-size:13px; font-weight:700; cursor:pointer; }
+.save-btn { background:var(--accent); color:#fff; }
+.cancel-btn { background:var(--bg); color:var(--text-secondary); border:1px solid var(--border-strong) !important; }
+.edit-status { font-size:12px; margin-top:8px; text-align:center; display:none; }
+.edit-status.ok { color:var(--success-text); }
+.edit-status.err { color:var(--danger-text); }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <input type="text" id="searchInput" placeholder="ابحث بالاسم أو SKU أو امسح باركود..." autocomplete="off" autofocus />
+    <button id="searchBtn">بحث</button>
+  </div>
+  <div class="suggest" id="suggest"></div>
+  <div class="room-chips" id="roomChips"></div>
+  <div class="body-area">
+    <div class="canvas-wrap">
+      <div class="top-view-btn" id="topViewBtn">⬆ عرض كامل</div>
+      <div id="canvas-container"></div>
+      <div class="result-panel" id="resultPanel">
+        <div class="result-header">
+          <div><div class="result-title" id="rName">-</div><div class="result-sku" id="rSku">-</div></div>
+          <div style="display:flex; gap:6px; align-items:flex-start;"><button class="edit-btn" id="editBtn">✏️ تعديل الموقع</button><button class="close-btn" id="closeResult" aria-label="اغلاق">&times;</button></div>
+        </div>
+        <div class="location-code" id="rLocation">-</div>
+        <div class="info-grid">
+          <div class="info-item"><div class="l">الغرفة / الرف / المستوى</div><div class="v" id="rParts">-</div></div>
+          <div class="info-item"><div class="l">الكمية</div><div class="v" id="rQty">-</div></div>
+          <div class="info-item"><div class="l">الحالة</div><div class="v"><span class="badge" id="rBadge">-</span></div></div>
+        </div>
+        <div class="edit-form" id="editForm">
+          <div class="edit-row">
+            <div><label>الغرفة</label><select id="editRoom"></select></div>
+            <div><label>الرف</label><select id="editRack"></select></div>
+            <div><label>المستوى</label><select id="editLevel"></select></div>
+          </div>
+          <div class="edit-actions">
+            <button class="save-btn" id="saveEditBtn">💾 حفظ</button>
+            <button class="cancel-btn" id="cancelEditBtn">إلغاء</button>
+          </div>
+          <div class="edit-status" id="editStatus"></div>
+        </div>
+      </div>
+      <div class="not-found" id="notFound">❌ المنتج غير موجود — جرب SKU آخر</div>
+    </div>
+  </div>
+  <div class="stats" id="statsBar"></div>
+  <div class="hint-bar">امسح الباركود بجهاز Zebra TC27 أو اكتب SKU يدوياً — اضغط أي غرفة لرؤية رفوفها، واضغط أي مستوى لتحديده</div>
+</div>
+
+<script>
+const WAREHOUSE = {"R1": {"layout": {"x": -3.8, "z": -7.8, "w": 2.2, "d": 2.1}, "aisles": {"A": [1, 2, 3], "B": [1, 2, 3, 4]}}, "R2": {"layout": {"x": -6.6, "z": -7.8, "w": 2.2, "d": 2.1}, "aisles": {"A": [1, 2, 3, 4, 5, 6], "B": [1, 2, 3, 4, 5, 6, 7], "C": [1, 2, 3, 4, 5]}}, "R3": {"layout": {"x": -9.4, "z": -7.8, "w": 2.2, "d": 2.1}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7, 8], "B": [1, 2, 3, 4, 5, 6, 7, 8], "C": [1, 2, 3, 4, 5, 6, 7, 8], "D": [1, 2, 3, 4, 5, 6, 7, 8], "E": [1, 2, 3, 4, 5, 6, 7, 8], "F": [1, 2, 3, 4, 5, 6, 7, 8], "G": [1, 2, 3, 4, 5, 6, 7], "H": [1, 2, 3, 4, 5, 6, 7], "I": [1, 2, 3, 4, 5, 6, 7], "J": [1, 2, 3, 4, 5, 6, 7, 8], "K": [1, 2, 3, 4, 5, 6, 7, 8], "L": [1, 2, 3, 4, 5, 6, 7], "M": [1, 2, 3, 4, 5, 6, 7], "N": [1, 2, 3, 4, 5, 6, 7], "O": [1, 2, 3, 4, 5, 6]}}, "R4": {"layout": {"x": -3.4, "z": -0.7, "w": 1.9, "d": 1.6}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7, 8], "B": [1, 2, 3, 4, 5, 6, 7, 8, 9], "C": [1, 2, 3, 4, 5, 6], "D": [1, 2, 3, 4, 5, 6, 7], "E": [1, 2, 3, 4, 5, 6, 7], "F": [1, 2, 3, 4, 5, 6, 7], "G": [1, 2, 3, 4, 5, 6, 7], "H": [1, 2, 3, 4, 5, 6, 7], "I": [1, 2, 3, 4, 5, 6, 7]}}, "R5": {"layout": {"x": -3.4, "z": 1.6, "w": 1.9, "d": 1.9}, "aisles": {"A": [1, 2, 3], "B": [1, 2, 3, 4], "C": [1, 2, 3, 4, 5, 6, 7], "D": [1, 2, 3, 4, 5, 6, 7, 8]}}, "R6": {"layout": {"x": -9.6, "z": -3.0, "w": 2.2, "d": 4.8}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7], "B": [1, 2, 3, 4, 5, 6, 7], "C": [1, 2, 3, 4, 5, 6], "D": [1, 2, 3, 4, 5, 6, 7, 8], "E": [1, 2, 3, 4, 5, 6, 7], "F": [1, 2, 3, 4, 5, 6, 7], "G": [1, 2, 3, 4, 5, 6, 7], "H": [1, 2, 3, 4, 5, 6, 7]}}, "R7": {"layout": {"x": -9.6, "z": 3.2, "w": 2.2, "d": 5.6}, "aisles": {"A": [1, 2, 3, 4, 5], "B": [1, 2, 3, 4, 5], "C": [1, 2, 3, 4, 5, 6, 7], "D": [1, 2, 3, 4, 5, 6, 7], "E": [1, 2, 3, 4, 5, 6, 7], "F": [1, 2, 3, 4, 5, 6, 7], "G": [1, 2, 3, 4, 5, 6, 7, 8], "H": [1, 2, 3, 4, 5, 6, 7], "I": [1, 2, 3, 4, 5, 6, 7], "J": [1, 2, 3, 4, 5, 6, 7, 8], "K": [1, 2, 3, 4, 5, 6], "L": [1, 2, 3, 4, 5, 6], "M": [1, 2, 3, 4, 5, 6], "N": [1, 2, 3, 4, 5, 6], "O": [1, 2, 3, 4, 5, 6, 7], "P": [1, 2, 3, 4, 5, 6, 7]}}, "R8": {"layout": {"x": -6.6, "z": 7.2, "w": 3.2, "d": 2.2}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7], "B": [1, 2, 3, 4, 5, 6, 7], "C": [1, 2, 3, 4, 5, 6, 7], "D": [1, 2, 3, 4, 5, 6, 7], "E": [1, 2, 3, 4, 5, 6, 7], "F": [1, 2, 3, 4, 5, 6, 7], "G": [1, 2, 3, 4, 5, 6, 7], "H": [1, 2, 3, 4, 5, 6, 7], "I": [1, 2, 3, 4, 5, 6, 7]}}, "R9": {"layout": {"x": -3.2, "z": 7.2, "w": 3.2, "d": 2.2}, "aisles": {"A": [1, 2, 3, 4, 5, 6], "B": [1, 2, 3, 4, 5, 6], "C": [1, 2, 3, 4, 5, 6], "D": [1, 2, 3, 4, 5, 6], "E": [1, 2, 3, 4, 5], "F": [1, 2, 3, 4, 5, 6, 7], "G": [1, 2, 3, 4, 5, 6, 7], "H": [1, 2, 3, 4, 5, 6, 7], "I": [1, 2, 3, 4, 5, 6, 7], "J": [1, 2, 3, 4, 5, 6, 7], "K": [1, 2, 3, 4, 5, 6, 7], "L": [1, 2, 3, 4, 5, 6, 7], "M": [1, 2, 3, 4, 5, 6, 7], "N": [1, 2, 3, 4, 5, 6, 7], "O": [1, 2, 3, 4, 5, 6], "P": [1, 2, 3, 4, 5, 6], "Q": [1, 2, 3, 4, 5, 6], "R": [1, 2, 3, 4, 5, 6]}}, "R10": {"layout": {"x": 0.3, "z": 7.2, "w": 3.0, "d": 2.2}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7, 8], "B": [1, 2, 3, 4, 5, 6, 7, 8], "C": [1, 2, 3, 4, 5, 6], "D": [1, 2, 3, 4, 5, 6], "E": [1, 2, 3, 4, 5, 6], "F": [1, 2, 3, 4, 5, 6], "G": [1, 2, 3, 4, 5, 6], "H": [1, 2, 3, 4, 5, 6], "I": [1, 2, 3, 4, 5, 6, 7, 8], "J": [1, 2, 3, 4, 5, 6, 7, 8], "K": [1, 2, 3, 4, 5, 6, 7, 8]}}, "R11": {"layout": {"x": 3.8, "z": 7.2, "w": 3.4, "d": 2.2}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7, 8, 9], "B": [1, 2, 3, 4, 5, 6, 7, 8, 9], "C": [1, 2, 3, 4, 5], "D": [1, 2, 3, 4, 5], "E": [1, 2, 3, 4, 5], "F": [1, 2, 3, 4, 5]}}, "R12": {"layout": {"x": -0.7, "z": 3.9, "w": 7.6, "d": 1.5}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7], "B": [1, 2, 3, 4, 5, 6, 7], "C": [1, 2, 3, 4, 5, 6, 7], "D": [1, 2, 3, 4, 5, 6, 7], "E": [1, 2, 3, 4, 5, 6, 7], "F": [1, 2, 3, 4, 5, 6, 7], "G": [1, 2, 3, 4, 5, 6, 7], "H": [1, 2, 3, 4, 5], "I": [1, 2, 3, 4, 5, 6, 7], "J": [1, 2, 3, 4, 5, 6, 7], "K": [1, 2, 3, 4, 5], "L": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], "M": [1, 2, 3, 4, 5, 6, 7], "N": [1, 2, 3, 4, 5, 6, 7], "O": [1, 2, 3, 4, 5, 6, 7], "P": [1, 2, 3, 4, 5, 6, 7], "Q": [1, 2, 3, 4, 5, 6, 7, 8, 9], "R": [1, 2, 3, 4, 5, 6, 7, 8, 9], "S": [1, 2, 3, 4, 5, 6, 7, 8, 9], "T": [1, 2, 3, 4, 5, 6, 7, 8, 9], "U": [1, 2, 3, 4, 5, 6, 7, 8]}}, "R13": {"layout": {"x": 8.6, "z": 3.2, "w": 2.2, "d": 5.6}, "aisles": {"A": [1, 2, 3, 4], "B": [1, 2, 3, 4], "C": [1, 2, 3, 4], "D": [1, 2, 3, 4], "E": [1, 2, 3, 4], "F": [1, 2, 3, 4], "G": [1, 2, 3, 4], "H": [1, 2, 3, 4, 5, 6, 7], "I": [1, 2, 3, 4, 5, 6, 7]}}, "R14": {"layout": {"x": 8.6, "z": -3.0, "w": 2.2, "d": 4.8}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7], "B": [1, 2, 3, 4, 5, 6, 7], "C": [1, 2, 3, 4, 5, 6, 7], "D": [1, 2, 3, 4, 5, 6, 7], "E": [1, 2, 3, 4, 5, 6], "F": [1, 2, 3, 4, 5, 6], "G": [1, 2, 3, 4, 5, 6, 7], "H": [1, 2, 3, 4, 5, 6], "I": [1, 2, 3, 4, 5, 6], "J": [1, 2, 3, 4, 5, 6], "K": [1, 2, 3, 4, 5, 6], "L": [1, 2, 3, 4, 5, 6], "M": [1, 2, 3, 4, 5, 6], "N": [1, 2, 3, 4, 5, 6], "O": [1, 2, 3, 4, 5, 6]}}, "R15": {"layout": {"x": 7.6, "z": -7.8, "w": 3.0, "d": 2.1}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7, 8], "B": [1, 2, 3, 4, 5, 6, 7, 8], "C": [1, 2, 3, 4, 5, 6, 7, 8], "D": [1, 2, 3, 4, 5, 6, 7, 8], "E": [1, 2, 3, 4, 5, 6, 7, 8], "F": [1, 2, 3, 4, 5, 6, 7, 8], "G": [1, 2, 3, 4, 5, 6, 7, 8], "H": [1, 2, 3, 4, 5, 6, 7, 8], "I": [1, 2, 3, 4, 5, 6, 7, 8]}}, "R16": {"layout": {"x": 3.6, "z": -7.8, "w": 2.2, "d": 2.1}, "aisles": {"A": [1, 2, 3, 4, 5], "B": [1, 2, 3, 4, 5], "C": [1, 2, 3, 4, 5]}}, "R17": {"layout": {"x": 2.0, "z": 1.4, "w": 2.6, "d": 2.3}, "aisles": {"A": [1, 2, 3, 4], "B": [1, 2, 3, 4, 5, 6, 7, 8, 9], "C": [1, 2, 3, 4, 5, 6, 7, 8, 9], "D": [1, 2, 3, 4, 5, 6, 7, 8, 9], "E": [1, 2, 3, 4, 5, 6, 7, 8], "F": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], "G": [1, 2, 3, 4, 5, 6, 7, 8, 9], "H": [1, 2, 3, 4, 5, 6, 7, 8, 9], "I": [1, 2, 3, 4, 5, 6, 7, 8, 9], "J": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], "K": [1, 2, 3, 4, 5, 6, 7, 8, 9], "L": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}}, "M1": {"layout": {"x": -5.4, "z": 1.6, "w": 0.5, "d": 4.9, "corridor": true}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7, 8], "B": [1, 2, 3, 4, 5, 6, 7, 8], "C": [1, 2, 3, 4, 5, 6, 7, 8], "D": [1, 2, 3, 4, 5, 6, 7], "E": [1, 2, 3, 4, 5, 6, 7], "F": [1, 2, 3, 4, 5, 6, 7], "G": [1, 2, 3, 4, 5, 6, 7], "H": [1, 2, 3, 4, 5, 6, 7], "I": [1, 2, 3, 4, 5, 6, 7], "J": [1, 2, 3, 4, 5, 6]}}, "M2": {"layout": {"x": -0.7, "z": 5.6, "w": 8.6, "d": 0.5, "corridor": true}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7, 8], "B": [1, 2, 3, 4, 5, 6, 7, 8], "C": [1, 2, 3, 4, 5, 6, 7, 8], "D": [1, 2, 3, 4, 5, 6, 7, 8], "E": [1, 2, 3, 4, 5, 6, 7, 8], "F": [1, 2, 3, 4, 5, 6, 7, 8]}}, "M3": {"layout": {"x": 4.0, "z": 1.6, "w": 0.5, "d": 4.9, "corridor": true}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7, 8], "B": [1, 2, 3, 4, 5, 6, 7, 8], "C": [1, 2, 3, 4, 5, 6], "D": [1, 2, 3, 4, 5, 6, 7, 8], "E": [1, 2, 3, 4, 5, 6, 7, 8], "F": [1, 2, 3, 4, 5, 6, 7, 8], "G": [1, 2, 3, 4, 5, 6, 7, 8], "H": [1, 2, 3, 4, 5, 6, 7, 8], "I": [1, 2, 3, 4, 5, 6, 7], "J": [1, 2, 3, 4, 5, 6, 7], "K": [1, 2, 3, 4, 5, 6, 7]}}};
+
+const PRODUCTS = {
+  'PU-029': { name: 'شنيور كهربائي 13 مم', barcode: 'BC-001', qty: 120, room: 'R3', rack: 'A', level: 3 },
+  'PN-015': { name: 'مفك براغي طقم', barcode: 'BC-002', qty: 45, room: 'R3', rack: 'B', level: 5 },
+  'HM-042': { name: 'مطرقة حديد', barcode: 'BC-003', qty: 0, room: 'R6', rack: 'C', level: 2 },
+  'PS-008': { name: 'شريط قياس 5 متر', barcode: 'BC-004', qty: 67, room: 'R12', rack: 'L', level: 4 },
+  'AZ-100': { name: 'مفتاح انجليزي', barcode: 'BC-005', qty: 30, room: 'R17', rack: 'F', level: 9 },
+  'AZ-200': { name: 'منشار يدوي', barcode: 'BC-006', qty: 15, room: 'R9', rack: 'M', level: 6 },
+  'PL-011': { name: 'كماشة 8 بوصة', barcode: 'BC-007', qty: 52, room: 'R3', rack: 'C', level: 2 },
+  'PU-030': { name: 'شنيور كهربائي 10 مم', barcode: 'BC-008', qty: 18, room: 'R3', rack: 'A', level: 4 },
+  'PN-016': { name: 'مفك فيليبس كبير', barcode: 'BC-009', qty: 90, room: 'R3', rack: 'B', level: 6 },
+  'AZ-300': { name: 'مفتاح ربط طقم 12 قطعة', barcode: 'BC-010', qty: 24, room: 'R3', rack: 'D', level: 6 }
+};
+function locationCode(room, rack, level) { return room + '-' + rack + '-' + level; }
+
+// ===== Floor plan, measured in pixels of the plan image (top of image = top of screen) =====
+const PXU = 1 / 40, CX = 562, CY = 1172;
+function rectPx(x1, y1, x2, y2) {
+  return { x: ((x1 + x2) / 2 - CX) * PXU, z: ((y1 + y2) / 2 - CY) * PXU, w: (x2 - x1) * PXU, d: (y2 - y1) * PXU };
+}
+const PLAN = {
+  R7:[15,795,145,1100], R6:[15,1108,145,1382], R3:[15,1390,145,1550],
+  R8:[152,795,305,923], R9:[313,795,562,923], R10:[570,795,796,923], R11:[803,795,1108,923],
+  R13:[980,931,1108,1185], R14:[980,1192,1108,1445],
+  R2:[185,1453,305,1550], R1:[313,1453,441,1550], R16:[683,1453,811,1550], R15:[948,1453,1108,1550],
+  R12:[217,995,908,1107], R5:[217,1115,441,1244], R4:[217,1252,441,1381], R17:[683,1115,908,1381],
+  M2:[152,931,972,988], M1:[152,988,209,1388], M3:[916,988,972,1388]
+};
+const INNER_ROOMS = ['R12', 'R5', 'R4', 'R17'];
+for (const z in WAREHOUSE) {
+  WAREHOUSE[z].layout = Object.assign(rectPx(...PLAN[z]), { corridor: z[0] === 'M' });
+}
+
+let scene, camera, renderer, raycaster, mouse;
+const shelfMeshes = {}, roomOutlines = {}, roomBounds = {}, rackLabels = {};
+let highlighted = [];
+const camTarget = new THREE.Vector3();
+let animToken = 0;
+const SHELF_COLOR = 0xa8b3c4;
+const LEVEL_H = 0.16;
+const TAN_HALF = Math.tan(25 * Math.PI / 180);
+
+function box(w, h, d, color, x, y, z) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshLambertMaterial({ color }));
+  m.position.set(x, y, z); scene.add(m); return m;
+}
+function boxPx(r, h, color, y) { const p = rectPx(...r); return box(p.w, h, p.d, color, p.x, y, p.z); }
+
+function makeLabel(text, sc) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 220; canvas.height = 88;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(4, 4, 212, 80, 40) : ctx.rect(4, 4, 212, 80); ctx.fill();
+  ctx.strokeStyle = '#3b3f4a'; ctx.lineWidth = 4; ctx.stroke();
+  ctx.fillStyle = '#1a1c22'; ctx.font = 'bold 46px sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(text, 110, 46);
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true, depthTest: false }));
+  const k = sc || 1; s.scale.set(1.25 * k, 0.5 * k, 1); s.renderOrder = 10;
+  return s;
+}
+
+function overviewPose() {
+  const c = document.getElementById('canvas-container');
+  const a = c.clientWidth / Math.max(1, c.clientHeight);
+  const W = 29.5, H = 23.5;
+  const d = Math.max((W / 2) / (TAN_HALF * a), (H / 2) / TAN_HALF);
+  const t = new THREE.Vector3(0, 0, 1.2);
+  return { pos: new THREE.Vector3(0, d, 1.2 + d * 0.10), target: t };
+}
+function goOverview(animated) {
+  const p = overviewPose();
+  if (animated) animateCamera(p.pos, p.target);
+  else { camera.position.copy(p.pos); camTarget.copy(p.target); camera.lookAt(camTarget); }
+}
+
+function initScene() {
+  const container = document.getElementById('canvas-container');
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xeceef3);
+  camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 400);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  container.appendChild(renderer.domElement);
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+  const dl = new THREE.DirectionalLight(0xffffff, 0.45);
+  dl.position.set(8, 30, 20); scene.add(dl);
+
+  goOverview(false);
+  drawPlanBase();
+  buildWarehouse();
+  setupControls();
+  window.addEventListener('resize', onResize);
+  animate();
+}
+
+function drawPlanBase() {
+  box(60, 0.02, 44, 0xeceef3, 0, -0.01, 1);
+  boxPx([152, 931, 972, 1445], 0.04, 0xa9cc7c, 0.02);            // green corridors M1/M2/M3
+  boxPx([209, 988, 916, 1388], 0.06, 0xf1f2f4, 0.03);            // inner block
+  // entrance (dashed area in the plan) + arrow pointing into the warehouse
+  boxPx([449, 1453, 675, 1550], 0.06, 0xcfe6c4, 0.03);
+  const e = rectPx(449, 1453, 675, 1550);
+  const shaft = box(0.14, 0.05, 1.5, 0x2f5a25, e.x + 0.9, 0.09, e.z + 0.2);
+  const cone = new THREE.Mesh(new THREE.ConeGeometry(0.4, 0.8, 12), new THREE.MeshLambertMaterial({ color: 0x2f5a25 }));
+  cone.rotation.x = -Math.PI / 2; cone.position.set(e.x + 0.9, 0.1, e.z - 0.85); scene.add(cone);
+  const el = makeLabel('المدخل', 0.8); el.position.set(e.x - 0.8, 0.5, e.z + 0.2); scene.add(el);
+  // office
+  const o = boxPx([449, 1115, 675, 1381], 0.5, 0xf5c56b, 0.25);
+  const ol = makeLabel('المكتب', 1.1); const op = rectPx(449, 1115, 675, 1381); ol.position.set(op.x, 1.0, op.z); scene.add(ol);
+  // WC
+  boxPx([819, 1453, 940, 1550], 0.08, 0xffffff, 0.04);
+  const wp = rectPx(819, 1453, 940, 1550); const wl = makeLabel('WC', 0.8); wl.position.set(wp.x, 0.5, wp.z); scene.add(wl);
+  // R3 foot (L-shape in the plan)
+  boxPx([145, 1455, 177, 1550], 0.08, 0xffffff, 0.04);
+  // stairs (ladder) below the entrance
+  const s = rectPx(533, 1565, 590, 1635);
+  [-1, 1].forEach(sx => box(0.1, 0.1, s.d, 0x2a3140, s.x + sx * s.w / 2 * 0.8, 0.1, s.z));
+  for (let i = 0; i < 4; i++) box(s.w * 0.8, 0.08, 0.1, 0x2a3140, s.x, 0.1, s.z - s.d / 2 + s.d * (i + 0.5) / 4);
+  const sl = makeLabel('الدرج', 0.8); const slp = rectPx(628, 1585, 670, 1620); sl.position.set(slp.x + 0.5, 0.5, slp.z); scene.add(sl);
+  // corridor captions
+  [['ممر M2', 562, 959], ['ممر M1', 180, 1188], ['ممر M3', 944, 1188]].forEach(([t, px, py]) => {
+    const p = rectPx(px, py, px, py); const l = makeLabel(t, 0.7); l.position.set(p.x, 0.5, p.z); l.userData.cap = true; scene.add(l);
+  });
+}
+
+function buildWarehouse() {
+  for (const [zone, data] of Object.entries(WAREHOUSE)) {
+    const L = data.layout; roomBounds[zone] = L;
+    if (!L.corridor) {
+      const inner = INNER_ROOMS.includes(zone);
+      const f = box(L.w, 0.08, L.d, inner ? 0xe6eaf2 : 0xffffff, L.x, 0.04, L.z);
+      f.userData = { zone, isRoomFloor: true }; roomOutlines[zone] = f;
+      const edges = new THREE.EdgesGeometry(new THREE.BoxGeometry(L.w, 0.08, L.d));
+      const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x6d7280 }));
+      line.position.set(L.x, 0.04, L.z); scene.add(line);
+      const lab = makeLabel(zone, 0.8); lab.position.set(L.x, 0.4, L.z - L.d / 2 + 0.3); scene.add(lab);
+      buildRacks(zone, L, data.aisles, 0.6);
+    } else {
+      const f = box(L.w, 0.02, L.d, 0xa9cc7c, L.x, 0.03, L.z);
+      f.userData = { zone, isRoomFloor: true }; roomOutlines[zone] = f;
+      buildRacks(zone, L, data.aisles, 0);
+    }
+  }
+}
+
+const rackGroups = {};
+const texCache = {};
+function badgeTex(n, gold) {
+  const key = n + (gold ? 'g' : 'w');
+  if (texCache[key]) return texCache[key];
+  const c = document.createElement('canvas'); c.width = 96; c.height = 96;
+  const x = c.getContext('2d');
+  x.beginPath(); x.arc(48, 48, 42, 0, Math.PI * 2);
+  x.fillStyle = gold ? '#ffc933' : '#ffffff'; x.fill();
+  x.lineWidth = 6; x.strokeStyle = '#1f2430'; x.stroke();
+  x.fillStyle = '#1a1c22'; x.font = 'bold 54px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.fillText(String(n), 48, 52);
+  return (texCache[key] = new THREE.CanvasTexture(c));
+}
+function buildRacks(zone, L, racks, topReserve) {
+  const names = Object.keys(racks).sort();
+  const k = names.length; if (!k) return;
+  const areaW = L.w, areaD = L.d - topReserve;
+  const zStart = L.z - L.d / 2 + topReserve;
+  const cols = Math.max(1, Math.min(k, Math.round(Math.sqrt(k * areaW / areaD))));
+  const rows = Math.ceil(k / cols);
+  const pad = 0.06;
+  const cw = (areaW - pad * 2) / cols, cd = (areaD - pad * 2) / rows;
+  const rw = cw * 0.72, rd = cd * 0.62;
+  rackLabels[zone] = [];
+  const postGeo = new THREE.BoxGeometry(0.035, 1, 0.035);
+  names.forEach((rack, i) => {
+    const levels = Math.max(...racks[rack]);
+    const c = i % cols, r = Math.floor(i / cols);
+    const x = L.x - L.w / 2 + pad + cw * (c + 0.5);
+    const z = zStart + pad + cd * (r + 0.5);
+    const H = levels * LEVEL_H;
+    const g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g);
+    const postMat = new THREE.MeshPhongMaterial({ color: 0x2f4a8a });
+    [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx, sz]) => {
+      const p = new THREE.Mesh(postGeo, postMat);
+      p.scale.y = H; p.position.set(sx * rw / 2, H / 2 + 0.08, sz * rd / 2); g.add(p);
+    });
+    const badges = [];
+    for (let lv = 1; lv <= levels; lv++) {          // level 1 = top
+      const y = (levels - lv) * LEVEL_H + LEVEL_H / 2 + 0.08;
+      const m = new THREE.Mesh(new THREE.BoxGeometry(rw * 0.94, LEVEL_H * 0.8, rd * 0.94), new THREE.MeshPhongMaterial({ color: SHELF_COLOR }));
+      m.position.set(0, y, 0);
+      m.userData = { zone, rack, level: lv, isShelf: true, baseColor: SHELF_COLOR };
+      g.add(m); shelfMeshes[zone + '-' + rack + '-' + lv] = m;
+      const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: badgeTex(lv, false), transparent: true, depthTest: false }));
+      s.scale.set(0.13, 0.13, 1); s.position.set(0, y, rd * 0.47 + 0.02); s.renderOrder = 12; s.visible = false;
+      g.add(s); badges.push(s);
+    }
+    const lab = makeLabel(rack, 0.42); lab.position.set(0, H + 0.3, 0); lab.visible = false;
+    g.add(lab); rackLabels[zone].push(lab);
+    g.userData = { zone, rack, levels, H, rw, rd, base: new THREE.Vector3(x, 0, z), badges, label: lab, tw: 0 };
+    rackGroups[zone + '-' + rack] = g;
+  });
+}
+function showRackLabels(zone) { for (const z in rackLabels) rackLabels[z].forEach(s => s.visible = (z === zone)); }
+
+// ===== camera: animate + drag to pan + pinch/wheel to zoom =====
+function animateCamera(pos, look) {
+  const id = ++animToken;
+  const sp = camera.position.clone(), st = camTarget.clone();
+  let t = 0;
+  (function step() {
+    if (id !== animToken) return;
+    t = Math.min(1, t + 0.06);
+    camera.position.lerpVectors(sp, pos, t);
+    camTarget.lerpVectors(st, look, t);
+    camera.lookAt(camTarget);
+    if (t < 1) requestAnimationFrame(step);
+  })();
+}
+function setupControls() {
+  const el = renderer.domElement; el.style.touchAction = 'none';
+  const ptrs = new Map(); let moved = 0, pinchD = 0;
+  el.addEventListener('pointerdown', e => { el.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); moved = 0; animToken++;
+    if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinchD = Math.hypot(a.x - b.x, a.y - b.y); } });
+  el.addEventListener('pointermove', e => {
+    const p = ptrs.get(e.pointerId); if (!p) return;
+    const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
+    moved += Math.abs(dx) + Math.abs(dy);
+    if (ptrs.size === 1) {
+      const dist = camera.position.distanceTo(camTarget);
+      const u = 2 * dist * TAN_HALF / el.clientHeight;
+      camera.position.x -= dx * u; camTarget.x -= dx * u;
+      camera.position.z -= dy * u; camTarget.z -= dy * u;
+      camera.lookAt(camTarget);
+    } else if (ptrs.size === 2) {
+      const [a, b] = [...ptrs.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y);
+      if (pinchD) zoomBy(pinchD / d); pinchD = d;
+    }
+  });
+  const up = e => { const wasOne = ptrs.size === 1; ptrs.delete(e.pointerId);
+    if (wasOne && moved < 8) pick(e); if (ptrs.size < 2) pinchD = 0; };
+  el.addEventListener('pointerup', up); el.addEventListener('pointercancel', e => ptrs.delete(e.pointerId));
+  el.addEventListener('wheel', e => { e.preventDefault(); zoomBy(e.deltaY > 0 ? 1.12 : 0.89); }, { passive: false });
+}
+function zoomBy(f) {
+  const off = camera.position.clone().sub(camTarget);
+  const len = Math.min(90, Math.max(3.5, off.length() * f));
+  off.setLength(len); camera.position.copy(camTarget).add(off); camera.lookAt(camTarget);
+}
+
+function pick(e) {
+  const rect = renderer.domElement.getBoundingClientRect();
+  mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+  const hits = raycaster.intersectObjects([...Object.values(shelfMeshes), ...Object.values(roomOutlines)]);
+  if (!hits.length) return;
+  const ud = hits[0].object.userData;
+  if (ud.isShelf) selectShelf(ud.zone, ud.rack, ud.level); else if (ud.zone) filterByRoom(ud.zone);
+}
+function onResize() {
+  const c = document.getElementById('canvas-container');
+  camera.aspect = c.clientWidth / c.clientHeight; camera.updateProjectionMatrix();
+  renderer.setSize(c.clientWidth, c.clientHeight);
+}
+function animate() { requestAnimationFrame(animate); renderer.render(scene, camera); }
+
+// ===== highlight / pop-out =====
+const POP_S = 2.4;
+let poppedGroup = null;
+function tweenGroup(g, toPos, toScale) {
+  const id = ++g.userData.tw, sp = g.position.clone(), ss = g.scale.x; let t = 0;
+  (function step() {
+    if (id !== g.userData.tw) return;
+    t = Math.min(1, t + 0.08); const e = 1 - Math.pow(1 - t, 3);
+    g.position.lerpVectors(sp, toPos, e); g.scale.setScalar(ss + (toScale - ss) * e);
+    if (t < 1) requestAnimationFrame(step);
+  })();
+}
+function setFade(active) {
+  for (const key in rackGroups) {
+    const g = rackGroups[key], f = active && g !== active;
+    g.traverse(o => { if (o.isMesh) { const m = o.material; m.transparent = !!f; m.opacity = f ? 0.07 : 1; m.depthWrite = !f; m.needsUpdate = true; } });
+  }
+}
+function showOnlyLabel(g) {
+  for (const z in rackLabels) rackLabels[z].forEach(s => s.visible = false);
+  if (g) g.userData.label.visible = true;
+}
+function unpopRack() {
+  if (!poppedGroup) return;
+  setFade(null);
+  const g = poppedGroup; poppedGroup = null;
+  g.userData.badges.forEach(s => s.visible = false);
+  tweenGroup(g, g.userData.base, 1);
+}
+function popRack(zone, rack, level) {
+  const g = rackGroups[zone + '-' + rack]; if (!g) return null;
+  if (poppedGroup && poppedGroup !== g) unpopRack();
+  const u = g.userData;
+  if (poppedGroup !== g) {
+    poppedGroup = g;
+    const to = u.base.clone(); to.z += u.rd * POP_S / 2 + 0.5;
+    tweenGroup(g, to, POP_S);
+    setFade(g);
+  }
+  u.badges.forEach((s, i) => { s.material.map = badgeTex(i + 1, i + 1 === level); s.material.needsUpdate = true; s.visible = true; });
+  return g;
+}
+function focusPopped(g) {
+  const u = g.userData;
+  const Hs = (u.H + 0.16) * POP_S, zf = u.base.z + u.rd * POP_S / 2 + 0.5;
+  const c = document.getElementById('canvas-container'); const a = c.clientWidth / Math.max(1, c.clientHeight);
+  const d = Math.max(4.2, (Hs / 2 + 0.7) / TAN_HALF, (u.rw * POP_S / 2 + 0.9) / (TAN_HALF * a)) + u.rd * POP_S / 2 + 0.8;
+  animateCamera(new THREE.Vector3(u.base.x, Hs * 0.5 + 1.0, zf + d), new THREE.Vector3(u.base.x, Hs * 0.5, zf));
+}
+function resetGold() {
+  highlighted.forEach(m => { m.material.color.setHex(m.userData.baseColor); m.material.emissive.setHex(0x000000); });
+  highlighted = [];
+}
+function clearHighlight() { resetGold(); unpopRack(); }
+function focusRoom(zone) {
+  const L = roomBounds[zone]; if (!L) return;
+  const c = document.getElementById('canvas-container'); const a = c.clientWidth / Math.max(1, c.clientHeight);
+  const d = Math.max(5, (L.w / 2 + 0.8) / (TAN_HALF * a), (L.d / 2 + 0.8) / TAN_HALF);
+  animateCamera(new THREE.Vector3(L.x, d, L.z + d * 0.28), new THREE.Vector3(L.x, 0, L.z));
+}
+function highlightShelf(zone, rack, level) {
+  resetGold(); showRackLabels(zone);
+  const mesh = shelfMeshes[zone + '-' + rack + '-' + level];
+  if (!mesh) { unpopRack(); focusRoom(zone); return; }
+  const g = popRack(zone, rack, level);
+  showOnlyLabel(g);
+  mesh.material.color.setHex(0xffcc33); mesh.material.emissive.setHex(0xcc8800);
+  highlighted.push(mesh);
+  focusPopped(g);
+}
+function selectShelf(zone, rack, level) {
+  const hit = Object.entries(PRODUCTS).find(([, p]) => p.room === zone && p.rack === rack && p.level === level);
+  document.getElementById('notFound').classList.remove('show');
+  if (hit) { showProduct(hit[0]); return; }
+  document.getElementById('resultPanel').classList.remove('show');
+  document.getElementById('statsBar').textContent = 'الموقع المحدد: ' + locationCode(zone, rack, level) + ' — لا يوجد منتج مسجل هنا';
+  highlightShelf(zone, rack, level); setActiveChip(zone);
+}
+
+// ===== search by name / SKU / barcode =====
+function norm(s) {
+  return String(s || '').toLowerCase().replace(/[\u064B-\u065F\u0670\u0640]/g, '')
+    .replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/\s+/g, ' ').trim();
+}
+function matchProducts(q) {
+  const nq = norm(q); if (!nq) return [];
+  const toks = nq.split(' '), out = [];
+  for (const [sku, p] of Object.entries(PRODUCTS)) {
+    const hay = norm(p.name + ' ' + sku + ' ' + p.barcode);
+    if (toks.every(t => hay.includes(t))) {
+      const score = (norm(sku) === nq || norm(p.barcode) === nq) ? 0 : norm(p.name).startsWith(nq) ? 1 : 2;
+      out.push({ sku, p, score });
+    }
+  }
+  return out.sort((x, y) => x.score - y.score);
+}
+function hideSuggest() { document.getElementById('suggest').style.display = 'none'; }
+function renderSuggest() {
+  const box = document.getElementById('suggest');
+  const q = document.getElementById('searchInput').value;
+  if (norm(q).length < 2) { hideSuggest(); return; }
+  box.style.top = document.querySelector('.topbar').offsetHeight + 'px';
+  box.innerHTML = '';
+  const m = matchProducts(q).slice(0, 8);
+  if (!m.length) { const e = document.createElement('div'); e.className = 'sg-empty'; e.textContent = 'لا توجد نتائج'; box.appendChild(e); box.style.display = 'block'; return; }
+  m.forEach(({ sku, p }) => {
+    const d = document.createElement('div'); d.className = 'sg-item';
+    const l = document.createElement('div');
+    const n1 = document.createElement('div'); n1.className = 'sg-name'; n1.textContent = p.name;
+    const n2 = document.createElement('div'); n2.className = 'sg-sku'; n2.textContent = sku;
+    l.appendChild(n1); l.appendChild(n2);
+    const loc = document.createElement('div'); loc.className = 'sg-loc'; loc.textContent = locationCode(p.room, p.rack, p.level);
+    d.appendChild(l); d.appendChild(loc);
+    d.onclick = () => { document.getElementById('searchInput').value = p.name; hideSuggest(); showProduct(sku); };
+    box.appendChild(d);
+  });
+  box.style.display = 'block';
+}
+function showProduct(sku) {
+  const product = PRODUCTS[sku]; if (!product) return;
+  editingSku = sku;
+  hideSuggest();
+  document.getElementById('rName').textContent = product.name;
+  document.getElementById('rSku').textContent = sku;
+  document.getElementById('rLocation').textContent = '📍 ' + locationCode(product.room, product.rack, product.level);
+  document.getElementById('rParts').textContent = product.room + ' / ' + product.rack + ' / ' + product.level;
+  document.getElementById('rQty').textContent = product.qty;
+  const b = document.getElementById('rBadge');
+  if (product.qty > 0) { b.className = 'badge ok'; b.textContent = 'متوفر ✅'; } else { b.className = 'badge out'; b.textContent = 'غير متوفر ❌'; }
+  document.getElementById('resultPanel').classList.add('show');
+  document.getElementById('notFound').classList.remove('show');
+  highlightShelf(product.room, product.rack, product.level); setActiveChip(product.room);
+}
+function search() {
+  const q = document.getElementById('searchInput').value.trim();
+  const rp = document.getElementById('resultPanel'), nf = document.getElementById('notFound');
+  if (!q) { rp.classList.remove('show'); nf.classList.remove('show'); hideSuggest(); return; }
+  const m = matchProducts(q);
+  if (!m.length) { rp.classList.remove('show'); nf.classList.add('show'); hideSuggest(); return; }
+  if (m[0].score === 0 || m.length === 1) { showProduct(m[0].sku); return; }
+  renderSuggest();
+}
+
+function filterByRoom(zone) {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('resultPanel').classList.remove('show');
+  document.getElementById('notFound').classList.remove('show');
+  clearHighlight(); showRackLabels(zone); focusRoom(zone); setActiveChip(zone);
+  const a = WAREHOUSE[zone].aisles;
+  document.getElementById('statsBar').textContent = zone + ': ' + Object.keys(a).length + ' رف، ' + Object.values(a).reduce((s, n) => s + n.length, 0) + ' مستوى';
+}
+function setActiveChip(zone) { document.querySelectorAll('.room-chip').forEach(c => c.classList.toggle('active', c.dataset.zone === zone)); }
+function buildChips() {
+  const wrap = document.getElementById('roomChips');
+  const zones = Object.keys(WAREHOUSE).sort((a, b) => (a[0] === b[0] ? parseInt(a.slice(1)) - parseInt(b.slice(1)) : (a[0] === 'R' ? -1 : 1)));
+  zones.forEach(zone => {
+    const chip = document.createElement('div');
+    chip.className = 'room-chip'; chip.textContent = zone; chip.dataset.zone = zone;
+    chip.onclick = () => filterByRoom(zone); wrap.appendChild(chip);
+  });
+}
+function resetView() {
+  clearHighlight(); showRackLabels(null); goOverview(true); setActiveChip(null);
+  document.getElementById('resultPanel').classList.remove('show');
+  document.getElementById('notFound').classList.remove('show');
+}
+document.getElementById('searchBtn').addEventListener('click', search);
+document.getElementById('searchInput').addEventListener('keypress', e => { if (e.key === 'Enter') search(); });
+document.getElementById('closeResult').addEventListener('click', resetView);
+document.getElementById('topViewBtn').addEventListener('click', resetView);
+
+document.getElementById('searchInput').addEventListener('input', renderSuggest);
+document.addEventListener('pointerdown', e => { if (!e.target.closest('#suggest') && e.target.id !== 'searchInput') hideSuggest(); });
+raycaster = new THREE.Raycaster(); mouse = new THREE.Vector2();
+buildChips(); initScene();
+initDb();
+const nAisles = Object.values(WAREHOUSE).reduce((a, z) => a + Object.keys(z.aisles).length, 0);
+const nLevels = Object.values(WAREHOUSE).reduce((a, z) => a + Object.values(z.aisles).reduce((x, n) => x + n.length, 0), 0);
+document.getElementById('statsBar').textContent = '17 غرفة + 3 ممرات، ' + nAisles + ' رف، ' + nLevels + ' مستوى — جرب تكتب: شنيور، مطرقة، كماشة';
+
+// ===== persistent location edits (shared across phone/desktop via the same link) =====
+let dbRef = null;
+async function initDb() {
+  try {
+    const db = await claude.use('db');
+    if (!db) return;               // capability not available in this view
+    dbRef = db;
+    const snap = await db.collection('locations').get();
+    snap.docs.forEach(d => {
+      const v = d.data();
+      if (PRODUCTS[d.id] && v && v.room && v.rack && v.level) {
+        Object.assign(PRODUCTS[d.id], { room: v.room, rack: v.rack, level: v.level });
+      }
+    });
+  } catch (e) { /* db not available in this environment - edits stay local only */ }
+}
+
+let editingSku = null;
+function fillEditRoomOptions(selected) {
+  const sel = document.getElementById('editRoom');
+  sel.innerHTML = '';
+  Object.keys(WAREHOUSE).filter(z => !WAREHOUSE[z].layout.corridor).sort((a, b) => parseInt(a.slice(1)) - parseInt(b.slice(1)))
+    .forEach(z => { const o = document.createElement('option'); o.value = z; o.textContent = z; if (z === selected) o.selected = true; sel.appendChild(o); });
+}
+function fillEditRackOptions(room, selected) {
+  const sel = document.getElementById('editRack');
+  sel.innerHTML = '';
+  const racks = Object.keys((WAREHOUSE[room] || {}).aisles || {}).sort();
+  racks.forEach(r => { const o = document.createElement('option'); o.value = r; o.textContent = r; if (r === selected) o.selected = true; sel.appendChild(o); });
+}
+function fillEditLevelOptions(room, rack, selected) {
+  const sel = document.getElementById('editLevel');
+  sel.innerHTML = '';
+  const nums = ((WAREHOUSE[room] || {}).aisles || {})[rack] || [];
+  const max = nums.length ? Math.max(...nums) : 1;
+  for (let lv = 1; lv <= max; lv++) { const o = document.createElement('option'); o.value = lv; o.textContent = lv; if (lv === selected) o.selected = true; sel.appendChild(o); }
+}
+function openEdit() {
+  if (!editingSku) return;
+  const p = PRODUCTS[editingSku];
+  fillEditRoomOptions(p.room);
+  fillEditRackOptions(p.room, p.rack);
+  fillEditLevelOptions(p.room, p.rack, p.level);
+  document.getElementById('editStatus').style.display = 'none';
+  document.getElementById('editForm').classList.add('show');
+}
+function closeEdit() { document.getElementById('editForm').classList.remove('show'); }
+document.getElementById('editRoom').addEventListener('change', e => {
+  fillEditRackOptions(e.target.value, null);
+  fillEditLevelOptions(e.target.value, document.getElementById('editRack').value, null);
+});
+document.getElementById('editRack').addEventListener('change', () => {
+  fillEditLevelOptions(document.getElementById('editRoom').value, document.getElementById('editRack').value, null);
+});
+document.getElementById('editBtn').addEventListener('click', openEdit);
+document.getElementById('cancelEditBtn').addEventListener('click', closeEdit);
+document.getElementById('saveEditBtn').addEventListener('click', async () => {
+  const room = document.getElementById('editRoom').value;
+  const rack = document.getElementById('editRack').value;
+  const level = parseInt(document.getElementById('editLevel').value);
+  const status = document.getElementById('editStatus');
+  if (!room || !rack || !level) return;
+  PRODUCTS[editingSku] = Object.assign({}, PRODUCTS[editingSku], { room, rack, level });
+  status.style.display = 'block';
+  if (dbRef) {
+    try {
+      await dbRef.collection('locations').doc(editingSku).set({ room, rack, level });
+      status.className = 'edit-status ok'; status.textContent = '✓ تم الحفظ — يظهر على كل الأجهزة';
+    } catch (e) {
+      status.className = 'edit-status err'; status.textContent = 'تعذر الحفظ على السيرفر (يعمل بهذا الجهاز فقط الآن)';
+    }
+  } else {
+    status.className = 'edit-status err'; status.textContent = 'الحفظ الدائم غير متاح بهذا العرض — التغيير محلي فقط';
+  }
+  closeEdit();
+  showProduct(editingSku);
+});
+</script>
+</body>
+</html>

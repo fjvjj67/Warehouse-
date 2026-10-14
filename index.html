@@ -106,6 +106,7 @@ button, input, select { font-family:inherit; }
 .kpi b { color:var(--text); }
 .kpi.out { background:var(--danger-bg); color:var(--danger-text); } .kpi.out b { color:inherit; }
 .kpi.low { background:var(--warn-bg); color:var(--warn-text); } .kpi.low b { color:inherit; }
+.kpi.upd { background:var(--accent-soft); color:var(--accent); font-weight:600; }
 .stats { flex:1; min-width:0; font-size:12px; color:var(--text-muted); }
 .tool-btn { background:var(--panel-2); border:1px solid var(--border-strong); color:var(--text); font-size:12px; font-weight:600; padding:5px 10px; border-radius:8px; cursor:pointer; }
 .tool-btn:hover { border-color:var(--accent); color:var(--accent); }
@@ -805,8 +806,21 @@ function showProduct(sku) {
     m.material.color.setHex(0xffcc33); m.material.emissive.setHex(0x996600); highlighted.push(m);
   });
 }
+function showRack(zone, rack) {
+  document.getElementById('resultPanel').classList.remove('show'); applyViewOffset();
+  resetGold(); showRackLabels(zone);
+  const g = popRack(zone, rack, 0); if (!g) return;
+  showOnlyLabel(g); focusPopped(g); setActiveChip(zone);
+  setStatus('الرف ' + zone + '-' + rack + '. اضغط أي مستوى لمعرفة ما عليه', true);
+}
 function search() {
   const q = document.getElementById('searchInput').value.trim();
+  const lm = q.toUpperCase().replace(/\s+/g, '').match(/^([RM]\d+)-([A-Z])(?:-?(\d+))?$/);   // shelf label code, e.g. R3-A-3 or R3-A
+  if (lm && WAREHOUSE[lm[1]] && WAREHOUSE[lm[1]].aisles[lm[2]]) {
+    hideSuggest(); document.getElementById('notFound').classList.remove('show');
+    if (lm[3] && locationExists(lm[1], lm[2], +lm[3])) selectShelf(lm[1], lm[2], +lm[3]); else showRack(lm[1], lm[2]);
+    return;
+  }
   const rp = document.getElementById('resultPanel'), nf = document.getElementById('notFound');
   if (!q) { rp.classList.remove('show'); applyViewOffset(); nf.classList.remove('show'); hideSuggest(); return; }
   const m = matchProducts(q);
@@ -963,6 +977,10 @@ function updateStats() {
   const list = Object.values(PRODUCTS);
   const out = list.filter(p => p.qty <= 0).length, low = list.filter(p => p.qty > 0 && p.qty <= LOW_STOCK).length;
   const k = document.getElementById('kpis'); k.innerHTML = '';
+  const d = new Date(CATALOG_AT), days = Math.floor((Date.now() - CATALOG_AT) / 864e5);
+  const up = document.createElement('span'); up.className = 'kpi ' + (days > 7 ? 'out' : 'upd');
+  up.textContent = 'آخر تحديث ' + String(d.getDate()).padStart(2, '0') + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + d.getFullYear() + (days > 7 ? ' (قبل ' + days + ' يوم)' : '');
+  up.title = 'تاريخ آخر استيراد من دفترة'; k.appendChild(up);
   [['meta', 'غرفة', 17], ['meta', 'رف', nAisles], ['meta', 'مستوى', nLevels], ['', 'منتج', list.length], ['out', 'نافد', out], ['low', 'منخفض', low], ['out', 'بدون موقع', list.filter(p => !p.rack).length]].forEach(([c, l, n]) => {
     if (c && c !== 'meta' && !n) return;
     const e = document.createElement('span'); e.className = 'kpi ' + c;

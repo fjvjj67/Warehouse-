@@ -91,6 +91,11 @@ html, body { height:100%; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI
 .edit-status { font-size:12px; margin-top:8px; text-align:center; display:none; }
 .edit-status.ok { color:var(--success-text); }
 .edit-status.err { color:var(--danger-text); }
+.badge.low { background:var(--warn-bg); color:var(--warn-text); }
+.edit-row input { width:100%; padding:8px; border:1px solid var(--border-strong); border-radius:6px; background:var(--bg); color:var(--text); font-size:14px; }
+.others { margin-bottom:10px; font-size:12px; color:var(--text-muted); }
+.others .chip { display:inline-block; margin:4px 4px 0 0; padding:4px 10px; border-radius:999px; border:1px solid var(--border-strong); background:var(--bg); color:var(--text); font-size:12px; font-weight:600; cursor:pointer; }
+.tool-btn { background:var(--bg); border:1px solid var(--border-strong); color:var(--text); font-size:12px; font-weight:700; padding:2px 10px; border-radius:6px; cursor:pointer; margin-right:8px; }
 </style>
 </head>
 <body>
@@ -116,11 +121,15 @@ html, body { height:100%; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI
           <div class="info-item"><div class="l">الكمية</div><div class="v" id="rQty">-</div></div>
           <div class="info-item"><div class="l">الحالة</div><div class="v"><span class="badge" id="rBadge">-</span></div></div>
         </div>
+        <div class="others" id="rOthers"></div>
         <div class="edit-form" id="editForm">
           <div class="edit-row">
             <div><label>الغرفة</label><select id="editRoom"></select></div>
             <div><label>الرف</label><select id="editRack"></select></div>
             <div><label>المستوى</label><select id="editLevel"></select></div>
+          </div>
+          <div class="edit-row">
+            <div><label>الكمية</label><input type="number" id="editQty" min="0" step="1" inputmode="numeric"></div>
           </div>
           <div class="edit-actions">
             <button class="save-btn" id="saveEditBtn">💾 حفظ</button>
@@ -132,7 +141,7 @@ html, body { height:100%; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI
       <div class="not-found" id="notFound">❌ المنتج غير موجود — جرب SKU آخر</div>
     </div>
   </div>
-  <div class="stats" id="statsBar"></div>
+  <div class="stats"><span id="statsBar"></span><button class="tool-btn" id="exportBtn">⬇ تصدير CSV</button></div>
   <div class="hint-bar">امسح الباركود بجهاز Zebra TC27 أو اكتب SKU يدوياً — اضغط أي غرفة لرؤية رفوفها، واضغط أي مستوى لتحديده</div>
 </div>
 
@@ -151,6 +160,7 @@ const PRODUCTS = {
   'PN-016': { name: 'مفك فيليبس كبير', barcode: 'BC-009', qty: 90, room: 'R3', rack: 'B', level: 6 },
   'AZ-300': { name: 'مفتاح ربط طقم 12 قطعة', barcode: 'BC-010', qty: 24, room: 'R3', rack: 'D', level: 6 }
 };
+const LOW_STOCK = 10;
 function locationCode(room, rack, level) { return room + '-' + rack + '-' + level; }
 
 // ===== Floor plan, measured in pixels of the plan image (top of image = top of screen) =====
@@ -235,6 +245,7 @@ function initScene() {
   buildWarehouse();
   setupControls();
   window.addEventListener('resize', onResize);
+  if (window.ResizeObserver) new ResizeObserver(onResize).observe(container);
   animate();
 }
 
@@ -525,6 +536,16 @@ function renderSuggest() {
   });
   box.style.display = 'block';
 }
+function renderOthers(sku, product) {
+  const box = document.getElementById('rOthers'); box.innerHTML = '';
+  const others = Object.entries(PRODUCTS).filter(([k, p]) => k !== sku && p.room === product.room && p.rack === product.rack && p.level === product.level);
+  if (!others.length) return;
+  box.appendChild(document.createTextNode('منتجات أخرى على نفس الرف:'));
+  others.forEach(([k, p]) => {
+    const c = document.createElement('span'); c.className = 'chip'; c.textContent = p.name;
+    c.onclick = () => showProduct(k); box.appendChild(c);
+  });
+}
 function showProduct(sku) {
   const product = PRODUCTS[sku]; if (!product) return;
   editingSku = sku;
@@ -535,7 +556,10 @@ function showProduct(sku) {
   document.getElementById('rParts').textContent = product.room + ' / ' + product.rack + ' / ' + product.level;
   document.getElementById('rQty').textContent = product.qty;
   const b = document.getElementById('rBadge');
-  if (product.qty > 0) { b.className = 'badge ok'; b.textContent = 'متوفر ✅'; } else { b.className = 'badge out'; b.textContent = 'غير متوفر ❌'; }
+  if (product.qty <= 0) { b.className = 'badge out'; b.textContent = 'غير متوفر ❌'; }
+  else if (product.qty <= LOW_STOCK) { b.className = 'badge low'; b.textContent = 'كمية منخفضة ⚠️'; }
+  else { b.className = 'badge ok'; b.textContent = 'متوفر ✅'; }
+  renderOthers(sku, product);
   document.getElementById('resultPanel').classList.add('show');
   document.getElementById('notFound').classList.remove('show');
   highlightShelf(product.room, product.rack, product.level); setActiveChip(product.room);
@@ -582,26 +606,35 @@ document.getElementById('searchInput').addEventListener('input', renderSuggest);
 document.addEventListener('pointerdown', e => { if (!e.target.closest('#suggest') && e.target.id !== 'searchInput') hideSuggest(); });
 raycaster = new THREE.Raycaster(); mouse = new THREE.Vector2();
 buildChips(); initScene();
-initDb();
 const nAisles = Object.values(WAREHOUSE).reduce((a, z) => a + Object.keys(z.aisles).length, 0);
 const nLevels = Object.values(WAREHOUSE).reduce((a, z) => a + Object.values(z.aisles).reduce((x, n) => x + n.length, 0), 0);
-document.getElementById('statsBar').textContent = '17 غرفة + 3 ممرات، ' + nAisles + ' رف، ' + nLevels + ' مستوى — جرب تكتب: شنيور، مطرقة، كماشة';
 
-// ===== persistent location edits (shared across phone/desktop via the same link) =====
+
+// ===== persistent edits: shared db when available, localStorage fallback =====
 let dbRef = null;
+const LS_KEY = 'warehouse-product-edits-v1';
+function lsLoad() { try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch (e) { return {}; } }
+function lsSave(sku, v) { try { const all = lsLoad(); all[sku] = v; localStorage.setItem(LS_KEY, JSON.stringify(all)); return true; } catch (e) { return false; } }
+function locationExists(room, rack, level) {
+  const nums = ((WAREHOUSE[room] || {}).aisles || {})[rack];
+  return !!nums && level >= 1 && level <= Math.max(...nums);
+}
+function applyEdit(sku, v) {
+  if (!PRODUCTS[sku] || !v) return;
+  if (v.room && v.rack && v.level && locationExists(v.room, v.rack, v.level)) Object.assign(PRODUCTS[sku], { room: v.room, rack: v.rack, level: v.level });
+  if (Number.isFinite(v.qty) && v.qty >= 0) PRODUCTS[sku].qty = v.qty;
+}
 async function initDb() {
+  const local = lsLoad();
+  Object.keys(local).forEach(k => applyEdit(k, local[k]));
   try {
+    if (typeof claude === 'undefined') return;
     const db = await claude.use('db');
-    if (!db) return;               // capability not available in this view
+    if (!db) return;
     dbRef = db;
     const snap = await db.collection('locations').get();
-    snap.docs.forEach(d => {
-      const v = d.data();
-      if (PRODUCTS[d.id] && v && v.room && v.rack && v.level) {
-        Object.assign(PRODUCTS[d.id], { room: v.room, rack: v.rack, level: v.level });
-      }
-    });
-  } catch (e) { /* db not available in this environment - edits stay local only */ }
+    snap.docs.forEach(d => applyEdit(d.id, d.data()));
+  } catch (e) { /* no shared db here - local storage only */ }
 }
 
 let editingSku = null;
@@ -630,6 +663,7 @@ function openEdit() {
   fillEditRoomOptions(p.room);
   fillEditRackOptions(p.room, p.rack);
   fillEditLevelOptions(p.room, p.rack, p.level);
+  document.getElementById('editQty').value = p.qty;
   document.getElementById('editStatus').style.display = 'none';
   document.getElementById('editForm').classList.add('show');
 }
@@ -647,23 +681,44 @@ document.getElementById('saveEditBtn').addEventListener('click', async () => {
   const room = document.getElementById('editRoom').value;
   const rack = document.getElementById('editRack').value;
   const level = parseInt(document.getElementById('editLevel').value);
+  const qty = parseInt(document.getElementById('editQty').value);
   const status = document.getElementById('editStatus');
   if (!room || !rack || !level) return;
-  PRODUCTS[editingSku] = Object.assign({}, PRODUCTS[editingSku], { room, rack, level });
+  if (!Number.isFinite(qty) || qty < 0) { status.style.display = 'block'; status.className = 'edit-status err'; status.textContent = 'أدخل كمية صحيحة (0 أو أكثر)'; return; }
+  const rec = { room, rack, level, qty };
+  PRODUCTS[editingSku] = Object.assign({}, PRODUCTS[editingSku], rec);
+  const savedLocal = lsSave(editingSku, rec);
   status.style.display = 'block';
   if (dbRef) {
     try {
-      await dbRef.collection('locations').doc(editingSku).set({ room, rack, level });
+      await dbRef.collection('locations').doc(editingSku).set(rec);
       status.className = 'edit-status ok'; status.textContent = '✓ تم الحفظ — يظهر على كل الأجهزة';
     } catch (e) {
-      status.className = 'edit-status err'; status.textContent = 'تعذر الحفظ على السيرفر (يعمل بهذا الجهاز فقط الآن)';
+      status.className = 'edit-status err'; status.textContent = 'تعذر الحفظ على السيرفر — محفوظ على هذا الجهاز فقط';
     }
   } else {
-    status.className = 'edit-status err'; status.textContent = 'الحفظ الدائم غير متاح بهذا العرض — التغيير محلي فقط';
+    status.className = savedLocal ? 'edit-status ok' : 'edit-status err';
+    status.textContent = savedLocal ? '✓ محفوظ على هذا الجهاز' : 'تعذر الحفظ — التغيير مؤقت';
   }
   closeEdit();
   showProduct(editingSku);
+  updateStats();
 });
+
+function updateStats() {
+  const list = Object.values(PRODUCTS);
+  document.getElementById('statsBar').textContent = '17 غرفة + 3 ممرات، ' + nAisles + ' رف، ' + nLevels + ' مستوى — ' + list.length + ' منتج (' +
+    list.filter(p => p.qty <= 0).length + ' نافد، ' + list.filter(p => p.qty > 0 && p.qty <= LOW_STOCK).length + ' منخفض)';
+}
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const esc = v => '"' + String(v).replace(/"/g, '""') + '"';
+  const rows = [['SKU', 'الاسم', 'الباركود', 'الغرفة', 'الرف', 'المستوى', 'الموقع', 'الكمية']];
+  Object.entries(PRODUCTS).forEach(([k, p]) => rows.push([k, p.name, p.barcode, p.room, p.rack, p.level, locationCode(p.room, p.rack, p.level), p.qty]));
+  const blob = new Blob(['\ufeff' + rows.map(r => r.map(esc).join(',')).join('\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'warehouse-products.csv';
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+initDb().then(updateStats); updateStats();
 </script>
 </body>
 </html>

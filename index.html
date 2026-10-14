@@ -196,27 +196,144 @@ button, input, select { font-family:inherit; }
   <div class="footer gutter">
     <div class="kpis" id="kpis"></div>
     <div class="stats" id="statsBar">اضغط غرفة لرؤية رفوفها، واضغط أي مستوى لمعرفة ما عليه</div>
+    <button class="tool-btn" id="importBtn">استيراد Excel</button>
+    <input type="file" id="importFile" accept=".xlsx,.xls,.csv" hidden>
     <button class="tool-btn" id="exportBtn">تصدير CSV</button>
   </div>
 </div>
 
 <script>
-const WAREHOUSE = {"R1": {"layout": {"x": -3.8, "z": -7.8, "w": 2.2, "d": 2.1}, "aisles": {"A": [1, 2, 3], "B": [1, 2, 3, 4]}}, "R2": {"layout": {"x": -6.6, "z": -7.8, "w": 2.2, "d": 2.1}, "aisles": {"A": [1, 2, 3, 4, 5, 6], "B": [1, 2, 3, 4, 5, 6, 7], "C": [1, 2, 3, 4, 5]}}, "R3": {"layout": {"x": -9.4, "z": -7.8, "w": 2.2, "d": 2.1}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7, 8], "B": [1, 2, 3, 4, 5, 6, 7, 8], "C": [1, 2, 3, 4, 5, 6, 7, 8], "D": [1, 2, 3, 4, 5, 6, 7, 8], "E": [1, 2, 3, 4, 5, 6, 7, 8], "F": [1, 2, 3, 4, 5, 6, 7, 8], "G": [1, 2, 3, 4, 5, 6, 7], "H": [1, 2, 3, 4, 5, 6, 7], "I": [1, 2, 3, 4, 5, 6, 7], "J": [1, 2, 3, 4, 5, 6, 7, 8], "K": [1, 2, 3, 4, 5, 6, 7, 8], "L": [1, 2, 3, 4, 5, 6, 7], "M": [1, 2, 3, 4, 5, 6, 7], "N": [1, 2, 3, 4, 5, 6, 7], "O": [1, 2, 3, 4, 5, 6]}}, "R4": {"layout": {"x": -3.4, "z": -0.7, "w": 1.9, "d": 1.6}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7, 8], "B": [1, 2, 3, 4, 5, 6, 7, 8, 9], "C": [1, 2, 3, 4, 5, 6], "D": [1, 2, 3, 4, 5, 6, 7], "E": [1, 2, 3, 4, 5, 6, 7], "F": [1, 2, 3, 4, 5, 6, 7], "G": [1, 2, 3, 4, 5, 6, 7], "H": [1, 2, 3, 4, 5, 6, 7], "I": [1, 2, 3, 4, 5, 6, 7]}}, "R5": {"layout": {"x": -3.4, "z": 1.6, "w": 1.9, "d": 1.9}, "aisles": {"A": [1, 2, 3], "B": [1, 2, 3, 4], "C": [1, 2, 3, 4, 5, 6, 7], "D": [1, 2, 3, 4, 5, 6, 7, 8]}}, "R6": {"layout": {"x": -9.6, "z": -3.0, "w": 2.2, "d": 4.8}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7], "B": [1, 2, 3, 4, 5, 6, 7], "C": [1, 2, 3, 4, 5, 6], "D": [1, 2, 3, 4, 5, 6, 7, 8], "E": [1, 2, 3, 4, 5, 6, 7], "F": [1, 2, 3, 4, 5, 6, 7], "G": [1, 2, 3, 4, 5, 6, 7], "H": [1, 2, 3, 4, 5, 6, 7]}}, "R7": {"layout": {"x": -9.6, "z": 3.2, "w": 2.2, "d": 5.6}, "aisles": {"A": [1, 2, 3, 4, 5], "B": [1, 2, 3, 4, 5], "C": [1, 2, 3, 4, 5, 6, 7], "D": [1, 2, 3, 4, 5, 6, 7], "E": [1, 2, 3, 4, 5, 6, 7], "F": [1, 2, 3, 4, 5, 6, 7], "G": [1, 2, 3, 4, 5, 6, 7, 8], "H": [1, 2, 3, 4, 5, 6, 7], "I": [1, 2, 3, 4, 5, 6, 7], "J": [1, 2, 3, 4, 5, 6, 7, 8], "K": [1, 2, 3, 4, 5, 6], "L": [1, 2, 3, 4, 5, 6], "M": [1, 2, 3, 4, 5, 6], "N": [1, 2, 3, 4, 5, 6], "O": [1, 2, 3, 4, 5, 6, 7], "P": [1, 2, 3, 4, 5, 6, 7]}}, "R8": {"layout": {"x": -6.6, "z": 7.2, "w": 3.2, "d": 2.2}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7], "B": [1, 2, 3, 4, 5, 6, 7], "C": [1, 2, 3, 4, 5, 6, 7], "D": [1, 2, 3, 4, 5, 6, 7], "E": [1, 2, 3, 4, 5, 6, 7], "F": [1, 2, 3, 4, 5, 6, 7], "G": [1, 2, 3, 4, 5, 6, 7], "H": [1, 2, 3, 4, 5, 6, 7], "I": [1, 2, 3, 4, 5, 6, 7]}}, "R9": {"layout": {"x": -3.2, "z": 7.2, "w": 3.2, "d": 2.2}, "aisles": {"A": [1, 2, 3, 4, 5, 6], "B": [1, 2, 3, 4, 5, 6], "C": [1, 2, 3, 4, 5, 6], "D": [1, 2, 3, 4, 5, 6], "E": [1, 2, 3, 4, 5], "F": [1, 2, 3, 4, 5, 6, 7], "G": [1, 2, 3, 4, 5, 6, 7], "H": [1, 2, 3, 4, 5, 6, 7], "I": [1, 2, 3, 4, 5, 6, 7], "J": [1, 2, 3, 4, 5, 6, 7], "K": [1, 2, 3, 4, 5, 6, 7], "L": [1, 2, 3, 4, 5, 6, 7], "M": [1, 2, 3, 4, 5, 6, 7], "N": [1, 2, 3, 4, 5, 6, 7], "O": [1, 2, 3, 4, 5, 6], "P": [1, 2, 3, 4, 5, 6], "Q": [1, 2, 3, 4, 5, 6], "R": [1, 2, 3, 4, 5, 6]}}, "R10": {"layout": {"x": 0.3, "z": 7.2, "w": 3.0, "d": 2.2}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7, 8], "B": [1, 2, 3, 4, 5, 6, 7, 8], "C": [1, 2, 3, 4, 5, 6], "D": [1, 2, 3, 4, 5, 6], "E": [1, 2, 3, 4, 5, 6], "F": [1, 2, 3, 4, 5, 6], "G": [1, 2, 3, 4, 5, 6], "H": [1, 2, 3, 4, 5, 6], "I": [1, 2, 3, 4, 5, 6, 7, 8], "J": [1, 2, 3, 4, 5, 6, 7, 8], "K": [1, 2, 3, 4, 5, 6, 7, 8]}}, "R11": {"layout": {"x": 3.8, "z": 7.2, "w": 3.4, "d": 2.2}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7, 8, 9], "B": [1, 2, 3, 4, 5, 6, 7, 8, 9], "C": [1, 2, 3, 4, 5], "D": [1, 2, 3, 4, 5], "E": [1, 2, 3, 4, 5], "F": [1, 2, 3, 4, 5]}}, "R12": {"layout": {"x": -0.7, "z": 3.9, "w": 7.6, "d": 1.5}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7], "B": [1, 2, 3, 4, 5, 6, 7], "C": [1, 2, 3, 4, 5, 6, 7], "D": [1, 2, 3, 4, 5, 6, 7], "E": [1, 2, 3, 4, 5, 6, 7], "F": [1, 2, 3, 4, 5, 6, 7], "G": [1, 2, 3, 4, 5, 6, 7], "H": [1, 2, 3, 4, 5], "I": [1, 2, 3, 4, 5, 6, 7], "J": [1, 2, 3, 4, 5, 6, 7], "K": [1, 2, 3, 4, 5], "L": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], "M": [1, 2, 3, 4, 5, 6, 7], "N": [1, 2, 3, 4, 5, 6, 7], "O": [1, 2, 3, 4, 5, 6, 7], "P": [1, 2, 3, 4, 5, 6, 7], "Q": [1, 2, 3, 4, 5, 6, 7, 8, 9], "R": [1, 2, 3, 4, 5, 6, 7, 8, 9], "S": [1, 2, 3, 4, 5, 6, 7, 8, 9], "T": [1, 2, 3, 4, 5, 6, 7, 8, 9], "U": [1, 2, 3, 4, 5, 6, 7, 8]}}, "R13": {"layout": {"x": 8.6, "z": 3.2, "w": 2.2, "d": 5.6}, "aisles": {"A": [1, 2, 3, 4], "B": [1, 2, 3, 4], "C": [1, 2, 3, 4], "D": [1, 2, 3, 4], "E": [1, 2, 3, 4], "F": [1, 2, 3, 4], "G": [1, 2, 3, 4], "H": [1, 2, 3, 4, 5, 6, 7], "I": [1, 2, 3, 4, 5, 6, 7]}}, "R14": {"layout": {"x": 8.6, "z": -3.0, "w": 2.2, "d": 4.8}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7], "B": [1, 2, 3, 4, 5, 6, 7], "C": [1, 2, 3, 4, 5, 6, 7], "D": [1, 2, 3, 4, 5, 6, 7], "E": [1, 2, 3, 4, 5, 6], "F": [1, 2, 3, 4, 5, 6], "G": [1, 2, 3, 4, 5, 6, 7], "H": [1, 2, 3, 4, 5, 6], "I": [1, 2, 3, 4, 5, 6], "J": [1, 2, 3, 4, 5, 6], "K": [1, 2, 3, 4, 5, 6], "L": [1, 2, 3, 4, 5, 6], "M": [1, 2, 3, 4, 5, 6], "N": [1, 2, 3, 4, 5, 6], "O": [1, 2, 3, 4, 5, 6]}}, "R15": {"layout": {"x": 7.6, "z": -7.8, "w": 3.0, "d": 2.1}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7, 8], "B": [1, 2, 3, 4, 5, 6, 7, 8], "C": [1, 2, 3, 4, 5, 6, 7, 8], "D": [1, 2, 3, 4, 5, 6, 7, 8], "E": [1, 2, 3, 4, 5, 6, 7, 8], "F": [1, 2, 3, 4, 5, 6, 7, 8], "G": [1, 2, 3, 4, 5, 6, 7, 8], "H": [1, 2, 3, 4, 5, 6, 7, 8], "I": [1, 2, 3, 4, 5, 6, 7, 8]}}, "R16": {"layout": {"x": 3.6, "z": -7.8, "w": 2.2, "d": 2.1}, "aisles": {"A": [1, 2, 3, 4, 5], "B": [1, 2, 3, 4, 5], "C": [1, 2, 3, 4, 5]}}, "R17": {"layout": {"x": 2.0, "z": 1.4, "w": 2.6, "d": 2.3}, "aisles": {"A": [1, 2, 3, 4], "B": [1, 2, 3, 4, 5, 6, 7, 8, 9], "C": [1, 2, 3, 4, 5, 6, 7, 8, 9], "D": [1, 2, 3, 4, 5, 6, 7, 8, 9], "E": [1, 2, 3, 4, 5, 6, 7, 8], "F": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], "G": [1, 2, 3, 4, 5, 6, 7, 8, 9], "H": [1, 2, 3, 4, 5, 6, 7, 8, 9], "I": [1, 2, 3, 4, 5, 6, 7, 8, 9], "J": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], "K": [1, 2, 3, 4, 5, 6, 7, 8, 9], "L": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}}, "M1": {"layout": {"x": -5.4, "z": 1.6, "w": 0.5, "d": 4.9, "corridor": true}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7, 8], "B": [1, 2, 3, 4, 5, 6, 7, 8], "C": [1, 2, 3, 4, 5, 6, 7, 8], "D": [1, 2, 3, 4, 5, 6, 7], "E": [1, 2, 3, 4, 5, 6, 7], "F": [1, 2, 3, 4, 5, 6, 7], "G": [1, 2, 3, 4, 5, 6, 7], "H": [1, 2, 3, 4, 5, 6, 7], "I": [1, 2, 3, 4, 5, 6, 7], "J": [1, 2, 3, 4, 5, 6]}}, "M2": {"layout": {"x": -0.7, "z": 5.6, "w": 8.6, "d": 0.5, "corridor": true}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7, 8], "B": [1, 2, 3, 4, 5, 6, 7, 8], "C": [1, 2, 3, 4, 5, 6, 7, 8], "D": [1, 2, 3, 4, 5, 6, 7, 8], "E": [1, 2, 3, 4, 5, 6, 7, 8], "F": [1, 2, 3, 4, 5, 6, 7, 8]}}, "M3": {"layout": {"x": 4.0, "z": 1.6, "w": 0.5, "d": 4.9, "corridor": true}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7, 8], "B": [1, 2, 3, 4, 5, 6, 7, 8], "C": [1, 2, 3, 4, 5, 6], "D": [1, 2, 3, 4, 5, 6, 7, 8], "E": [1, 2, 3, 4, 5, 6, 7, 8], "F": [1, 2, 3, 4, 5, 6, 7, 8], "G": [1, 2, 3, 4, 5, 6, 7, 8], "H": [1, 2, 3, 4, 5, 6, 7, 8], "I": [1, 2, 3, 4, 5, 6, 7], "J": [1, 2, 3, 4, 5, 6, 7], "K": [1, 2, 3, 4, 5, 6, 7]}}};
+const WAREHOUSE = {"R1": {"layout": {"x": -3.8, "z": -7.8, "w": 2.2, "d": 2.1}, "aisles": {"A": [1, 2, 3], "B": [1, 2, 3, 4]}}, "R2": {"layout": {"x": -6.6, "z": -7.8, "w": 2.2, "d": 2.1}, "aisles": {"A": [1, 2, 3, 4, 5, 6], "B": [1, 2, 3, 4, 5, 6, 7], "C": [1, 2, 3, 4, 5]}}, "R3": {"layout": {"x": -9.4, "z": -7.8, "w": 2.2, "d": 2.1}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7, 8], "B": [1, 2, 3, 4, 5, 6, 7, 8], "C": [1, 2, 3, 4, 5, 6, 7, 8], "D": [1, 2, 3, 4, 5, 6, 7, 8], "E": [1, 2, 3, 4, 5, 6, 7, 8], "F": [1, 2, 3, 4, 5, 6, 7, 8], "G": [1, 2, 3, 4, 5, 6, 7], "H": [1, 2, 3, 4, 5, 6, 7], "I": [1, 2, 3, 4, 5, 6, 7], "J": [1, 2, 3, 4, 5, 6, 7, 8], "K": [1, 2, 3, 4, 5, 6, 7, 8], "L": [1, 2, 3, 4, 5, 6, 7], "M": [1, 2, 3, 4, 5, 6, 7], "N": [1, 2, 3, 4, 5, 6, 7], "O": [1, 2, 3, 4, 5, 6, 7]}}, "R4": {"layout": {"x": -3.4, "z": -0.7, "w": 1.9, "d": 1.6}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7, 8], "B": [1, 2, 3, 4, 5, 6, 7, 8, 9], "C": [1, 2, 3, 4, 5, 6], "D": [1, 2, 3, 4, 5, 6, 7], "E": [1, 2, 3, 4, 5, 6, 7], "F": [1, 2, 3, 4, 5, 6, 7], "G": [1, 2, 3, 4, 5, 6, 7], "H": [1, 2, 3, 4, 5, 6, 7], "I": [1, 2, 3, 4, 5, 6, 7]}}, "R5": {"layout": {"x": -3.4, "z": 1.6, "w": 1.9, "d": 1.9}, "aisles": {"A": [1, 2, 3], "B": [1, 2, 3, 4], "C": [1, 2, 3, 4, 5, 6, 7], "D": [1, 2, 3, 4, 5, 6, 7, 8]}}, "R6": {"layout": {"x": -9.6, "z": -3.0, "w": 2.2, "d": 4.8}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7], "B": [1, 2, 3, 4, 5, 6, 7], "C": [1, 2, 3, 4, 5, 6], "D": [1, 2, 3, 4, 5, 6, 7, 8], "E": [1, 2, 3, 4, 5, 6, 7], "F": [1, 2, 3, 4, 5, 6, 7], "G": [1, 2, 3, 4, 5, 6, 7], "H": [1, 2, 3, 4, 5, 6, 7]}}, "R7": {"layout": {"x": -9.6, "z": 3.2, "w": 2.2, "d": 5.6}, "aisles": {"A": [1, 2, 3, 4, 5], "B": [1, 2, 3, 4, 5], "C": [1, 2, 3, 4, 5, 6, 7], "D": [1, 2, 3, 4, 5, 6, 7], "E": [1, 2, 3, 4, 5, 6, 7], "F": [1, 2, 3, 4, 5, 6, 7], "G": [1, 2, 3, 4, 5, 6, 7, 8], "H": [1, 2, 3, 4, 5, 6, 7], "I": [1, 2, 3, 4, 5, 6, 7], "J": [1, 2, 3, 4, 5, 6, 7, 8], "K": [1, 2, 3, 4, 5, 6], "L": [1, 2, 3, 4, 5, 6], "M": [1, 2, 3, 4, 5, 6], "N": [1, 2, 3, 4, 5, 6], "O": [1, 2, 3, 4, 5, 6, 7], "P": [1, 2, 3, 4, 5, 6, 7]}}, "R8": {"layout": {"x": -6.6, "z": 7.2, "w": 3.2, "d": 2.2}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7], "B": [1, 2, 3, 4, 5, 6, 7], "C": [1, 2, 3, 4, 5, 6, 7], "D": [1, 2, 3, 4, 5, 6, 7], "E": [1, 2, 3, 4, 5, 6, 7], "F": [1, 2, 3, 4, 5, 6, 7], "G": [1, 2, 3, 4, 5, 6, 7], "H": [1, 2, 3, 4, 5, 6, 7], "I": [1, 2, 3, 4, 5, 6, 7]}}, "R9": {"layout": {"x": -3.2, "z": 7.2, "w": 3.2, "d": 2.2}, "aisles": {"A": [1, 2, 3, 4, 5, 6], "B": [1, 2, 3, 4, 5, 6], "C": [1, 2, 3, 4, 5, 6], "D": [1, 2, 3, 4, 5, 6], "E": [1, 2, 3, 4, 5], "F": [1, 2, 3, 4, 5, 6, 7], "G": [1, 2, 3, 4, 5, 6, 7], "H": [1, 2, 3, 4, 5, 6, 7], "I": [1, 2, 3, 4, 5, 6, 7], "J": [1, 2, 3, 4, 5, 6, 7], "K": [1, 2, 3, 4, 5, 6, 7], "L": [1, 2, 3, 4, 5, 6, 7], "M": [1, 2, 3, 4, 5, 6, 7], "N": [1, 2, 3, 4, 5, 6, 7], "O": [1, 2, 3, 4, 5, 6], "P": [1, 2, 3, 4, 5, 6], "Q": [1, 2, 3, 4, 5, 6], "R": [1, 2, 3, 4, 5, 6]}}, "R10": {"layout": {"x": 0.3, "z": 7.2, "w": 3.0, "d": 2.2}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7, 8], "B": [1, 2, 3, 4, 5, 6, 7, 8], "C": [1, 2, 3, 4, 5, 6], "D": [1, 2, 3, 4, 5, 6], "E": [1, 2, 3, 4, 5, 6], "F": [1, 2, 3, 4, 5, 6], "G": [1, 2, 3, 4, 5, 6], "H": [1, 2, 3, 4, 5, 6], "I": [1, 2, 3, 4, 5, 6, 7, 8], "J": [1, 2, 3, 4, 5, 6, 7, 8], "K": [1, 2, 3, 4, 5, 6, 7, 8]}}, "R11": {"layout": {"x": 3.8, "z": 7.2, "w": 3.4, "d": 2.2}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7, 8, 9], "B": [1, 2, 3, 4, 5, 6, 7, 8, 9], "C": [1, 2, 3, 4, 5], "D": [1, 2, 3, 4, 5], "E": [1, 2, 3, 4, 5], "F": [1, 2, 3, 4, 5]}}, "R12": {"layout": {"x": -0.7, "z": 3.9, "w": 7.6, "d": 1.5}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7], "B": [1, 2, 3, 4, 5, 6, 7], "C": [1, 2, 3, 4, 5, 6, 7], "D": [1, 2, 3, 4, 5, 6, 7], "E": [1, 2, 3, 4, 5, 6, 7], "F": [1, 2, 3, 4, 5, 6, 7], "G": [1, 2, 3, 4, 5, 6, 7], "H": [1, 2, 3, 4, 5], "I": [1, 2, 3, 4, 5, 6, 7], "J": [1, 2, 3, 4, 5, 6, 7], "K": [1, 2, 3, 4, 5], "L": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], "M": [1, 2, 3, 4, 5, 6, 7], "N": [1, 2, 3, 4, 5, 6, 7], "O": [1, 2, 3, 4, 5, 6, 7], "P": [1, 2, 3, 4, 5, 6, 7], "Q": [1, 2, 3, 4, 5, 6, 7, 8, 9], "R": [1, 2, 3, 4, 5, 6, 7, 8, 9], "S": [1, 2, 3, 4, 5, 6, 7, 8, 9], "T": [1, 2, 3, 4, 5, 6, 7, 8, 9], "U": [1, 2, 3, 4, 5, 6, 7, 8]}}, "R13": {"layout": {"x": 8.6, "z": 3.2, "w": 2.2, "d": 5.6}, "aisles": {"A": [1, 2, 3, 4], "B": [1, 2, 3, 4], "C": [1, 2, 3, 4], "D": [1, 2, 3, 4], "E": [1, 2, 3, 4], "F": [1, 2, 3, 4], "G": [1, 2, 3, 4], "H": [1, 2, 3, 4, 5, 6, 7], "I": [1, 2, 3, 4, 5, 6, 7]}}, "R14": {"layout": {"x": 8.6, "z": -3.0, "w": 2.2, "d": 4.8}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7], "B": [1, 2, 3, 4, 5, 6, 7], "C": [1, 2, 3, 4, 5, 6, 7], "D": [1, 2, 3, 4, 5, 6, 7], "E": [1, 2, 3, 4, 5, 6], "F": [1, 2, 3, 4, 5, 6], "G": [1, 2, 3, 4, 5, 6, 7], "H": [1, 2, 3, 4, 5, 6], "I": [1, 2, 3, 4, 5, 6], "J": [1, 2, 3, 4, 5, 6], "K": [1, 2, 3, 4, 5, 6], "L": [1, 2, 3, 4, 5, 6], "M": [1, 2, 3, 4, 5, 6], "N": [1, 2, 3, 4, 5, 6], "O": [1, 2, 3, 4, 5, 6]}}, "R15": {"layout": {"x": 7.6, "z": -7.8, "w": 3.0, "d": 2.1}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7, 8], "B": [1, 2, 3, 4, 5, 6, 7, 8], "C": [1, 2, 3, 4, 5, 6, 7, 8], "D": [1, 2, 3, 4, 5, 6, 7, 8], "E": [1, 2, 3, 4, 5, 6, 7, 8], "F": [1, 2, 3, 4, 5, 6, 7, 8], "G": [1, 2, 3, 4, 5, 6, 7, 8], "H": [1, 2, 3, 4, 5, 6, 7, 8], "I": [1, 2, 3, 4, 5, 6, 7, 8]}}, "R16": {"layout": {"x": 3.6, "z": -7.8, "w": 2.2, "d": 2.1}, "aisles": {"A": [1, 2, 3, 4, 5], "B": [1, 2, 3, 4, 5], "C": [1, 2, 3, 4, 5]}}, "R17": {"layout": {"x": 2.0, "z": 1.4, "w": 2.6, "d": 2.3}, "aisles": {"A": [1, 2, 3, 4], "B": [1, 2, 3, 4, 5, 6, 7, 8, 9], "C": [1, 2, 3, 4, 5, 6, 7, 8, 9], "D": [1, 2, 3, 4, 5, 6, 7, 8, 9], "E": [1, 2, 3, 4, 5, 6, 7, 8], "F": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], "G": [1, 2, 3, 4, 5, 6, 7, 8, 9], "H": [1, 2, 3, 4, 5, 6, 7, 8, 9], "I": [1, 2, 3, 4, 5, 6, 7, 8, 9], "J": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], "K": [1, 2, 3, 4, 5, 6, 7, 8, 9], "L": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}}, "M1": {"layout": {"x": -5.4, "z": 1.6, "w": 0.5, "d": 4.9, "corridor": true}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7, 8], "B": [1, 2, 3, 4, 5, 6, 7, 8], "C": [1, 2, 3, 4, 5, 6, 7, 8], "D": [1, 2, 3, 4, 5, 6, 7], "E": [1, 2, 3, 4, 5, 6, 7], "F": [1, 2, 3, 4, 5, 6, 7], "G": [1, 2, 3, 4, 5, 6, 7], "H": [1, 2, 3, 4, 5, 6, 7], "I": [1, 2, 3, 4, 5, 6, 7], "J": [1, 2, 3, 4, 5, 6]}}, "M2": {"layout": {"x": -0.7, "z": 5.6, "w": 8.6, "d": 0.5, "corridor": true}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7, 8], "B": [1, 2, 3, 4, 5, 6, 7, 8], "C": [1, 2, 3, 4, 5, 6, 7, 8], "D": [1, 2, 3, 4, 5, 6, 7, 8], "E": [1, 2, 3, 4, 5, 6, 7, 8], "F": [1, 2, 3, 4, 5, 6, 7, 8]}}, "M3": {"layout": {"x": 4.0, "z": 1.6, "w": 0.5, "d": 4.9, "corridor": true}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7, 8], "B": [1, 2, 3, 4, 5, 6, 7, 8], "C": [1, 2, 3, 4, 5, 6], "D": [1, 2, 3, 4, 5, 6, 7, 8], "E": [1, 2, 3, 4, 5, 6, 7, 8], "F": [1, 2, 3, 4, 5, 6, 7, 8], "G": [1, 2, 3, 4, 5, 6, 7, 8], "H": [1, 2, 3, 4, 5, 6, 7, 8], "I": [1, 2, 3, 4, 5, 6, 7], "J": [1, 2, 3, 4, 5, 6, 7], "K": [1, 2, 3, 4, 5, 6, 7]}}};
 
+// Source: Backup_Products_4999723_20261014.xlsx (items with stock 0 left out). Replace with the Excel import button.
+const CATALOG_DATE = Date.UTC(2026, 9, 14);
+let CATALOG_AT = CATALOG_DATE;
 const PRODUCTS = {
-  'PU-029': { name: 'شنيور كهربائي 13 مم', barcode: 'BC-001', qty: 120, room: 'R3', rack: 'A', level: 3 },
-  'PN-015': { name: 'مفك براغي طقم', barcode: 'BC-002', qty: 45, room: 'R3', rack: 'B', level: 5 },
-  'HM-042': { name: 'مطرقة حديد', barcode: 'BC-003', qty: 0, room: 'R6', rack: 'C', level: 2 },
-  'PS-008': { name: 'شريط قياس 5 متر', barcode: 'BC-004', qty: 67, room: 'R12', rack: 'L', level: 4 },
-  'AZ-100': { name: 'مفتاح انجليزي', barcode: 'BC-005', qty: 30, room: 'R17', rack: 'F', level: 9 },
-  'AZ-200': { name: 'منشار يدوي', barcode: 'BC-006', qty: 15, room: 'R9', rack: 'M', level: 6 },
-  'PL-011': { name: 'كماشة 8 بوصة', barcode: 'BC-007', qty: 52, room: 'R3', rack: 'C', level: 2 },
-  'PU-030': { name: 'شنيور كهربائي 10 مم', barcode: 'BC-008', qty: 18, room: 'R3', rack: 'A', level: 4 },
-  'PN-016': { name: 'مفك فيليبس كبير', barcode: 'BC-009', qty: 90, room: 'R3', rack: 'B', level: 6 },
-  'AZ-300': { name: 'مفتاح ربط طقم 12 قطعة', barcode: 'BC-010', qty: 24, room: 'R3', rack: 'D', level: 6 }
+  "FT-001": {"name": "فتنك توصيله 4-4", "barcode": "3972300000271", "model": "PU-04", "qty": 1000, "room": "R3", "rack": "O", "level": 7},
+  "FT-002": {"name": "فتنك توصيله 6-6", "barcode": "3972300000325", "model": "PU-06", "qty": 3600, "room": "R3", "rack": "B", "level": 2},
+  "FT-003": {"name": "فتنك توصيله8-8", "barcode": "3972300000332", "model": "PU-08", "qty": 8225, "room": "R3", "rack": "E", "level": 4, "extra": [["E", 5]]},
+  "FT-004": {"name": "فتنك توصيله10-10", "barcode": "3972300000349", "model": "PU-010", "qty": 3050, "room": "R3", "rack": "L", "level": 2},
+  "FT-007": {"name": "فتنك توصيله 16-16", "barcode": "3972300000295", "model": "PU-016", "qty": 500, "room": "R3", "rack": "F", "level": 4},
+  "FT-008": {"name": "فتنك توصيله4-6", "barcode": "3972300000301", "model": "PG6-4", "qty": 3500, "room": "R3", "rack": "B", "level": 2},
+  "FT-010": {"name": "فتنك توصيله 6-8", "barcode": "3972300000318", "model": "PG8-6", "qty": 6900, "room": "R3", "rack": "B", "level": 3},
+  "FT-011": {"name": "فتنك توصيله 6-10", "barcode": "3972300000424", "model": "PG10-6", "qty": 7300, "room": "R3", "rack": "B", "level": 4},
+  "FT-012": {"name": "فتنك توصيله6-12", "barcode": "3972300000363", "model": "PG12-6", "qty": 2200, "room": "R3", "rack": "B", "level": 5},
+  "FT-013": {"name": "فتنك توصيله8-10", "barcode": "3972300000370", "model": "PG10-8", "qty": 5550, "room": "R3", "rack": "E", "level": 6},
+  "FT-014": {"name": "فتنك توصيله8-12", "barcode": "3972300000448", "model": "PG12-8", "qty": 3150, "room": "R3", "rack": "E", "level": 7},
+  "FT-015": {"name": "فتنك توصيله10-12", "barcode": "3972300000431", "model": "PU10-12", "qty": 900, "room": "R3", "rack": "L", "level": 3},
+  "FT-016": {"name": "فتنك 4* 1/8", "barcode": "3972300000646", "model": "PC4-01", "qty": 1200, "room": "R3", "rack": "O", "level": 1},
+  "FT-017": {"name": "فتنك 4* 1/4", "barcode": "3972300000653", "model": "PC4-02", "qty": 5100, "room": "R3", "rack": "O", "level": 1},
+  "FT-018": {"name": "فتنك 4* 4\\3", "barcode": "3972300000660", "model": "PC4-03", "qty": 100, "room": "R3", "rack": "O", "level": 1},
+  "FT-021": {"name": "فتنك عكس 4*1/4", "barcode": "3972300000783", "model": "PL4-02", "qty": 5250, "room": "R3", "rack": "O", "level": 3},
+  "FT-020": {"name": "فتنك عكس 4* 1/8", "barcode": "3972300000707", "model": "PL4-01", "qty": 3200, "room": "R3", "rack": "O", "level": 2},
+  "FT-024": {"name": "فتنك تي سن 4*1/8", "barcode": "3972300001216", "model": "PB4-01", "qty": 2000, "room": "R3", "rack": "O", "level": 4},
+  "FT-025": {"name": "فتنك تي سن 4*1/4", "barcode": "3972300001117", "model": "PB4-02", "qty": 2800, "room": "R3", "rack": "O", "level": 5},
+  "FT-029": {"name": "فتنك عكس منظم 4*1/4", "barcode": "3972300001155", "model": "SL4-02", "qty": 100, "room": "R3", "rack": "O", "level": 7},
+  "FT-032": {"name": "فتنك تي سن صفح 4*1/8", "barcode": "3972300001186", "model": "PD4-01", "qty": 1300, "room": "R3", "rack": "O", "level": 6},
+  "FT-033": {"name": "فتنك تي سن صفح 4*1/4", "barcode": "3972300001193", "model": "PD4-02", "qty": 2000, "room": "R3", "rack": "O", "level": 6},
+  "FT-036": {"name": "فتنك كاك 4*4", "barcode": "3972300001223", "model": "HVFF-4", "qty": 250, "room": "R3", "rack": "O", "level": 6},
+  "FT-039": {"name": "فتنك 6*1/8", "barcode": "3972300001360", "model": "PC6-01", "qty": 3200, "room": "R3", "rack": "A", "level": 2},
+  "FT-040": {"name": "فتنك 6* 1/4", "barcode": "3972300001254", "model": "PC6-02", "qty": 200, "room": "R3", "rack": "A", "level": 2},
+  "FT-041": {"name": "فتنك 6* 3/8", "barcode": "3972300001261", "model": "PC6-03", "qty": 1600, "room": "R3", "rack": "A", "level": 2},
+  "FT-042": {"name": "فتنك 6* 1/2", "barcode": "3972300001278", "model": "PC6-04", "qty": 13600, "room": "R3", "rack": "A", "level": 3, "extra": [["A", 4]]},
+  "FT-043": {"name": "فتنك عكس 6* 1/8", "barcode": "3972300001285", "model": "PL6-01", "qty": 2600, "room": "R3", "rack": "A", "level": 5},
+  "FT-044": {"name": "فتنك عكس 6* 1/4", "barcode": "3972300001292", "model": "PL6-02", "qty": 1800, "room": "R3", "rack": "A", "level": 5},
+  "FT-045": {"name": "فتنك عكس 6* 3/8", "barcode": "3972300001308", "model": "PL6-03", "qty": 1900, "room": "R3", "rack": "A", "level": 6},
+  "FT-046": {"name": "فتنك عكس 6* 1/2", "barcode": "3972300001315", "model": "PL6-04", "qty": 700, "room": "R3", "rack": "A", "level": 5},
+  "FT-048": {"name": "فتنك تي سن 6*1/4", "barcode": "3972300001346", "model": "PB6-02", "qty": 1850, "room": "R3", "rack": "A", "level": 6},
+  "FT-052": {"name": "فتنك تي 6", "barcode": "3972300001384", "model": "PE-6", "qty": 200, "room": "R3", "rack": "B", "level": 5},
+  "FT-053": {"name": "فتنك y6 بنطرون", "barcode": "3972300001391", "model": "PY-6", "qty": 2200, "room": "R3", "rack": "B", "level": 5},
+  "FT-054": {"name": "فتنك عكس 6*6", "barcode": "3972300001407", "model": "PV-06", "qty": 800, "room": "R3", "rack": "C", "level": 2},
+  "FT-055": {"name": "فتنك منظم 6 م", "barcode": "3972300001414", "model": "SA-6", "qty": 950, "room": "R3", "rack": "B", "level": 7},
+  "FT-056": {"name": "فتنك كاك 6 م", "barcode": "3972300001421", "model": "HVFF6", "qty": 500, "room": "R3", "rack": "A", "level": 7},
+  "FT-058": {"name": "فتنك 6 م خماسي", "barcode": "3972300001445", "model": "HPK-06", "qty": 1375, "room": "R3", "rack": "B", "level": 6},
+  "FT-060": {"name": "فتنك منظم 6 م*1/4.", "barcode": "3972300001469", "model": "SL6-02", "qty": 400, "room": "R3", "rack": "B", "level": 6},
+  "FT-063": {"name": "فتنك 8* 1/8", "barcode": "3972300001490", "model": "PC8-01", "qty": 1000, "room": "R3", "rack": "C", "level": 2},
+  "FT-064": {"name": "فتنك 8* 1/4", "barcode": "3972300001506", "model": "PC8-02", "qty": 7900, "room": "R3", "rack": "C", "level": 2, "extra": [["C", 3]]},
+  "FT-066": {"name": "فتنك 8* 3/8", "barcode": "3972300001629", "model": "PC8-03", "qty": 2300, "room": "R3", "rack": "C", "level": 3},
+  "FT-067": {"name": "فتنك عكس 8* 1/8", "barcode": "3972300001520", "model": "PL8-01", "qty": 2300, "room": "R3", "rack": "C", "level": 4},
+  "FT-068": {"name": "فتنك عكس 8* 1/4", "barcode": "3972300001537", "model": "PL8-02", "qty": 300, "room": "R3", "rack": "C", "level": 4},
+  "FT-069": {"name": "فتنك عكس 8* 3/8", "barcode": "3972300001544", "model": "PL8-03", "qty": 2750, "room": "R3", "rack": "C", "level": 5},
+  "FT-070": {"name": "فتنك عكس 8*1/2", "barcode": "3972300001728", "model": "PL8-04", "qty": 700, "room": "R3", "rack": "C", "level": 5},
+  "FT-071": {"name": "فتنك تي سن 8*1/8", "barcode": "3972300001735", "model": "PB8-01", "qty": 1400, "room": "R3", "rack": "C", "level": 6},
+  "FT-072": {"name": "فتنك تي سن 8*1/4", "barcode": "3972300001742", "model": "PB8-02", "qty": 7400, "room": "R3", "rack": "C", "level": 6, "extra": [["C", 7], ["D", 2], ["D", 3]]},
+  "FT-075": {"name": "فتنك تي سن صفح 8*1/4", "barcode": "3972300001797", "model": "PD8-02", "qty": 4600, "room": "R3", "rack": "D", "level": 5},
+  "FT-081": {"name": "فتنك منظم 8", "barcode": "3972300001667", "model": "SA-8", "qty": 400, "room": "R3", "rack": "E", "level": 3},
+  "FT-082": {"name": "فتنك كاك 8", "barcode": "3972300001681", "model": "HVFF-8", "qty": 150, "room": "R3", "rack": "E", "level": 3},
+  "FT-083": {"name": "فتنك رباعي 8", "barcode": "3972300001698", "model": "PZA-8", "qty": 50, "room": "R3", "rack": "E", "level": 3},
+  "FT-085": {"name": "فتنك تي 8 ملم", "barcode": "3972300003456", "model": "PE-8", "qty": 650, "room": "R3", "rack": "E", "level": 4},
+  "FT-086": {"name": "فتنك 10* 1/8", "barcode": "3972300003463", "model": "PC10-01", "qty": 1300, "room": "R3", "rack": "J", "level": 2},
+  "FT-088": {"name": "فتنك 10* 1/2", "barcode": "3972300003487", "model": "PC10-04", "qty": 1400, "room": "R3", "rack": "J", "level": 2},
+  "FT-090": {"name": "فتنك عكس 10* 1/8", "barcode": "3972300003630", "model": "PL10-01", "qty": 850, "room": "R3", "rack": "J", "level": 3},
+  "FT-091": {"name": "فتنك عكس 10* 1/4", "barcode": "3972300003647", "model": "PL10-02", "qty": 4150, "room": "R3", "rack": "J", "level": 3, "extra": [["J", 4]]},
+  "FT-092": {"name": "فتنك عكس 10* 3/8", "barcode": "3972300003500", "model": "PL10-03", "qty": 700, "room": "R3", "rack": "J", "level": 4},
+  "FT-093": {"name": "فتنك عكس 10* 1/2", "barcode": "3972300003517", "model": "PL10-04", "qty": 2250, "room": "R3", "rack": "J", "level": 5},
+  "FT-094": {"name": "فتنك تي سن 10*1/8", "barcode": "3972300003524", "model": "PB10-01", "qty": 225, "room": "R3", "rack": "J", "level": 6},
+  "FT-095": {"name": "فتنك تي سن 10*1/4", "barcode": "3972300003531", "model": "PB10-02", "qty": 1550, "room": "R3", "rack": "J", "level": 6},
+  "FT-097": {"name": "فتنك تي سن 10*1/2", "barcode": "3972300003555", "model": "PB10-04", "qty": 875, "room": "R3", "rack": "J", "level": 7},
+  "FT-098": {"name": "فتنك تي سن صفح 10*1/2", "barcode": "3972300003562", "model": "PD10-04", "qty": 950, "room": "R3", "rack": "K", "level": 2},
+  "FT-100": {"name": "فتنك عكس منظم 10*1/4", "barcode": "3972300003586", "model": "SA-10", "qty": 350, "room": "R3", "rack": "K", "level": 3},
+  "FT-101": {"name": "فتنك عكس منظم 10*3/8", "barcode": "3972300003593", "model": "SL10-03", "qty": 700, "room": "R3", "rack": "K", "level": 3},
+  "FT-102": {"name": "فتنك عكس منظم 10*1/2", "barcode": "3972300003609", "model": "SL10-04", "qty": 475, "room": "R3", "rack": "K", "level": 3},
+  "FT-103": {"name": "فتنك عكس 10*10", "barcode": "3972300003616", "model": "PL10", "qty": 75, "room": "R3", "rack": "K", "level": 3},
+  "FT-104": {"name": "فتنك منظم 10*10", "barcode": "3972300003623", "model": "SA-10", "qty": 725, "room": "R3", "rack": "K", "level": 4},
+  "FT-105": {"name": "فتنك كاك 10*10", "barcode": "3972300003654", "model": "HVFF-10", "qty": 775, "room": "R3", "rack": "K", "level": 5},
+  "FT-106": {"name": "فتنك رباعي 10 ملم", "barcode": "3972300003661", "model": "HPZA-10", "qty": 75, "room": "R3", "rack": "K", "level": 5},
+  "FT-107": {"name": "فتنك خماسي 10 ملم", "barcode": "3972300003678", "model": "HPK-10", "qty": 600, "room": "R3", "rack": "K", "level": 6},
+  "FT-108": {"name": "فتنك تي 10 ملم", "barcode": "3972300003685", "model": "PE-10", "qty": 200, "room": "R3", "rack": "K", "level": 7},
+  "FT-110": {"name": "فتنك 12* 1/4", "barcode": "3972300003708", "model": "PC12-12", "qty": 2300, "room": "R3", "rack": "L", "level": 5},
+  "FT-114": {"name": "فتنك عكس 12* 1/4", "barcode": "3972300003746", "model": "PL12-02", "qty": 4675, "room": "R3", "rack": "M", "level": 1, "extra": [["M", 2]]},
+  "FT-115": {"name": "فتنك عكس 12* 3/8", "barcode": "3972300003753", "model": "PL12-03", "qty": 75, "room": "R3", "rack": "M", "level": 3},
+  "FT-116": {"name": "فتنك عكس 12* 1/2", "barcode": "3972300003760", "model": "PL12-04", "qty": 1250, "room": "R3", "rack": "M", "level": 3, "extra": [["M", 4]]},
+  "FT-117": {"name": "فتنك تي سن 12*1/8", "barcode": "3972300003777", "model": "PB12-01", "qty": 800, "room": "R3", "rack": "M", "level": 4},
+  "FT-118": {"name": "فتنك تي سن 12*1/4", "barcode": "3972300003784", "model": "PB12-02", "qty": 275, "room": "R3", "rack": "M", "level": 5},
+  "FT-120": {"name": "فتنك تي سن 12*1/2", "barcode": "3972300003807", "model": "PB12-04", "qty": 725, "room": "R3", "rack": "M", "level": 5, "extra": [["M", 6]]},
+  "FT-123": {"name": "فتنك عكس منظم 12*3/8", "barcode": "3972300003838", "model": "SL12-03", "qty": 325, "room": "R3", "rack": "N", "level": 1},
+  "FT-124": {"name": "فتنك عكس منظم 12*1/2", "barcode": "3972300003845", "model": "SL12-04", "qty": 225, "room": "R3", "rack": "N", "level": 1},
+  "FT-125": {"name": "فتنك عكس 12*12", "barcode": "3972300003852", "model": "PVL12", "qty": 100, "room": "R3", "rack": "N", "level": 2},
+  "FT-128": {"name": "فتنك رباعي 12*12", "barcode": "3972300003883", "model": "HPZA-12", "qty": 300, "room": "R3", "rack": "N", "level": 3},
+  "FT-129": {"name": "فتنك خماسي 12*12", "barcode": "3972300003890", "model": "HPK-12", "qty": 290, "room": "R3", "rack": "N", "level": 4},
+  "FT-131": {"name": "فتنك بنطرون 12 ملم", "barcode": "3972300003913", "model": "PY-12", "qty": 850, "room": "R3", "rack": "N", "level": 4, "extra": [["N", 5], ["N", 6]]},
+  "FT-132": {"name": "فتنك تي سن صفح 12*1/2", "barcode": "3972300003920", "model": "PD12-04", "qty": 875, "room": "R3", "rack": "N", "level": 7},
+  "FT-133": {"name": "فتنك تي 16 ملم", "barcode": "3972300003937", "model": "PE-16", "qty": 420, "room": "R3", "rack": "F", "level": 6},
+  "FT-134": {"name": "فتنك تي سن صفح 16*1/2", "barcode": "3972300003944", "model": "PD16-04", "qty": 440, "room": "R3", "rack": "F", "level": 5},
+  "FT-135": {"name": "فتنك تي سن 16*1/2", "barcode": "3972300003951", "model": "PB16-04", "qty": 340, "room": "R3", "rack": "F", "level": 4},
+  "FT-141": {"name": "فتنك تي سن 6*1/8", "barcode": "3972300003968", "model": "PB6-01", "qty": 1150, "room": "R3", "rack": "A", "level": 6},
+  "FT-051": {"name": "فتنك تي سن صفح 6*1/4", "barcode": "3972300003975", "model": "PD6-02", "qty": 2850, "room": "R3", "rack": "A", "level": 7},
+  "FT-142": {"name": "فتنك عكس سن داخلي 1/4*6", "barcode": "3972300003982", "model": "PD6-02", "qty": 500, "room": "R3", "rack": "B", "level": 7},
+  "FT-143": {"name": "فتنك عكس سن داخلي 1/8*6", "barcode": "3972300003999", "model": "PLFG6-1", "qty": 1400, "room": "R3", "rack": "B", "level": 7},
+  "FT-144": {"name": "فتنك عكس سن ناعم 6 ملم", "barcode": "3972300004002", "model": "PL6-M5", "qty": 1200, "room": "R3", "rack": "B", "level": 7},
+  "FT-145": {"name": "فتنك منظم 6 سن ناعم", "barcode": "3972300004019", "model": "HSL6-M5", "qty": 300, "room": "R3", "rack": "B", "level": 6},
+  "FT-146": {"name": "فتنك تي سن صفح 8*1/8", "barcode": "3972300004026", "model": "PD8-01", "qty": 2550, "room": "R3", "rack": "D", "level": 4},
+  "FT-147": {"name": "فتنك عكس منظم 8*6", "barcode": "3972300022051", "model": "HSL8-6M", "qty": 150, "room": "R3", "rack": "F", "level": 2},
+  "FT-150": {"name": "فتنك عكس سن داخلي 8*1/4", "barcode": "3972300022075", "model": "PLF8-02", "qty": 850, "room": "R3", "rack": "F", "level": 2},
+  "FT-151": {"name": "فتنك عكس 16*1/2", "barcode": "3972300022082", "model": "PL16-04", "qty": 450, "room": "R3", "rack": "F", "level": 5},
+  "FT-152": {"name": "فتنك عكس 16*16", "barcode": "3972300022105", "model": "PV-16", "qty": 525, "room": "R3", "rack": "F", "level": 6},
+  "FT-153": {"name": "فتنك توصيلة 16-14", "barcode": "3972300022112", "model": "PG-16-14", "qty": 425, "room": "R3", "rack": "F", "level": 7},
+  "FT-154": {"name": "فتنك 14*1/2", "barcode": "3972300022129", "model": "PC14-04", "qty": 1000, "room": "R3", "rack": "F", "level": 7},
+  "FT-155": {"name": "فتنك تي 14", "barcode": "3972300022136", "model": "PE-14", "qty": 80, "room": "R3", "rack": "F", "level": 3},
+  "FT-156": {"name": "فتنك 4*5ملم سن ناعم", "barcode": "3972300022143", "model": "PC4-M5", "qty": 1400, "room": "R3", "rack": "O", "level": 2},
+  "FT-157": {"name": "فتنك عكس 4*5 سن ناعم", "barcode": "3972300022150", "model": "PL4-5M", "qty": 1500, "room": "R3", "rack": "O", "level": 2},
+  "FT-158": {"name": "فتنك تي 4*4", "barcode": "3972300022167", "model": "PE-4", "qty": 300, "room": "R3", "rack": "O", "level": 7},
+  "FT-159": {"name": "فتنك 6*1/8 ابيض", "barcode": "3972300022174", "model": "PC6-01", "qty": 200, "room": "R3", "rack": "O", "level": 7},
+  "FT-160": {"name": "فتنك 8*1/4 ابيض", "barcode": "3972300022181", "model": "PC8-02", "qty": 1250, "room": "R3", "rack": "O", "level": 7},
+  "FT-161": {"name": "فتنك عكس 16*1/2 ابيض", "barcode": "3972300022198", "model": "PL16-04", "qty": 176, "room": "R3", "rack": "O", "level": 7},
+  "FT-162": {"name": "فتنك 6*1/4 ابيض", "barcode": "3972300022204", "model": "PC6-02", "qty": 750, "room": "R3", "rack": "O", "level": 7},
+  "FT-163": {"name": "فتنك تي 6*1/8 ابيض", "barcode": "3972300022211", "model": "PB6-01", "qty": 280, "room": "R3", "rack": "O", "level": 7},
+  "FT-164": {"name": "فتنك 14*1/2 ابيض", "barcode": "3972300022228", "model": "PC14-04", "qty": 150, "room": "R3", "rack": "O", "level": 7},
+  "FT-165": {"name": "فتنك عكس 6*6 ابيض", "barcode": "3972300022235", "model": "PV-6", "qty": 200, "room": "R3", "rack": "O", "level": 7},
+  "FT-166": {"name": "فتنك 6*1/2 ابيض", "barcode": "3972300022242", "model": "PL6-04", "qty": 200, "room": "R3", "rack": "O", "level": 7},
+  "FT-167": {"name": "فتنك منظم 4 سن ناعم", "barcode": "3972300022259", "model": "HSL4-5M", "qty": 200, "room": "R3", "rack": "O", "level": 7},
+  "FT-168": {"name": "فتنك بنطرون 10 م", "barcode": "3972300022266", "model": "PY-10", "qty": 250, "room": "R3", "rack": "L", "level": 4},
+  "FT-169": {"name": "فتنك تي 10-8", "barcode": "3972300022273", "model": "PE10-8", "qty": 250, "room": "R3", "rack": "K", "level": 7},
+  "FT-171": {"name": "فتنك تي 12-8", "barcode": "3972300022280", "model": "PE12-8", "qty": 700, "room": "R3", "rack": "L", "level": 6},
+  "FT-170": {"name": "فتنك تي 12-10", "barcode": "3972300022297", "model": "PE12-10", "qty": 225, "room": "R3", "rack": "K", "level": 7}
 };
 const LOW_STOCK = 10;
 function locationCode(room, rack, level) { return room + '-' + rack + '-' + level; }
+function prodLocs(p) { return p.rack ? [[p.rack, p.level]].concat(p.extra || []) : []; }
+function locText(p) { const l = prodLocs(p); return l.length ? p.room + '-' + l.map(([r, v]) => r + v).join('+') : 'بدون موقع'; }
+function atShelf(p, zone, rack, level) { return p.room === zone && prodLocs(p).some(([r, v]) => r === rack && v === level); }
 
 // ===== Floor plan, measured in pixels of the plan image (top of image = top of screen) =====
 const PXU = 1 / 40, CX = 562, CY = 1172;
@@ -553,7 +670,7 @@ function highlightShelf(zone, rack, level) {
   focusPopped(g);
 }
 function selectShelf(zone, rack, level) {
-  const hit = Object.entries(PRODUCTS).find(([, p]) => p.room === zone && p.rack === rack && p.level === level);
+  const hit = Object.entries(PRODUCTS).find(([, p]) => atShelf(p, zone, rack, level));
   document.getElementById('notFound').classList.remove('show');
   if (hit) { showProduct(hit[0]); return; }
   document.getElementById('resultPanel').classList.remove('show');
@@ -570,7 +687,7 @@ function matchProducts(q) {
   const nq = norm(q); if (!nq) return [];
   const toks = nq.split(' '), out = [];
   for (const [sku, p] of Object.entries(PRODUCTS)) {
-    const hay = norm(p.name + ' ' + sku + ' ' + p.barcode);
+    const hay = norm(p.name + ' ' + sku + ' ' + p.barcode + ' ' + (p.model || ''));
     if (toks.every(t => hay.includes(t))) {
       const score = (norm(sku) === nq || norm(p.barcode) === nq) ? 0 : norm(p.name).startsWith(nq) ? 1 : 2;
       out.push({ sku, p, score });
@@ -593,7 +710,7 @@ function renderSuggest() {
     const n1 = document.createElement('div'); n1.className = 'sg-name'; n1.textContent = p.name;
     const n2 = document.createElement('div'); n2.className = 'sg-sku'; n2.textContent = sku;
     l.appendChild(n1); l.appendChild(n2);
-    const loc = document.createElement('div'); loc.className = 'sg-loc'; loc.textContent = locationCode(p.room, p.rack, p.level);
+    const loc = document.createElement('div'); loc.className = 'sg-loc'; loc.textContent = locText(p);
     d.appendChild(l); d.appendChild(loc);
     d.onclick = () => { document.getElementById('searchInput').value = p.name; hideSuggest(); showProduct(sku); };
     box.appendChild(d);
@@ -602,9 +719,9 @@ function renderSuggest() {
 }
 function renderOthers(sku, product) {
   const box = document.getElementById('rOthers'); box.innerHTML = '';
-  const others = Object.entries(PRODUCTS).filter(([k, p]) => k !== sku && p.room === product.room && p.rack === product.rack && p.level === product.level);
+  const others = Object.entries(PRODUCTS).filter(([k, p]) => k !== sku && prodLocs(product).some(([r, v]) => atShelf(p, product.room, r, v)));
   if (!others.length) return;
-  box.appendChild(document.createTextNode('منتجات أخرى على نفس الرف:'));
+  box.appendChild(document.createTextNode('منتجات أخرى على نفس الرفوف:'));
   others.forEach(([k, p]) => {
     const c = document.createElement('span'); c.className = 'chip'; c.textContent = p.name;
     c.onclick = () => showProduct(k); box.appendChild(c);
@@ -615,10 +732,10 @@ function showProduct(sku) {
   editingSku = sku;
   hideSuggest();
   document.getElementById('rName').textContent = product.name;
-  document.getElementById('rSku').textContent = sku;
-  document.getElementById('rLocation').textContent = '' + locationCode(product.room, product.rack, product.level);
-  document.getElementById('rParts').textContent = product.room + ' / ' + product.rack + ' / ' + product.level;
-  document.getElementById('rQty').textContent = product.qty;
+  document.getElementById('rSku').textContent = sku + (product.model ? ' · ' + product.model : '') + (product.barcode ? ' · ' + product.barcode : '');
+  document.getElementById('rLocation').textContent = locText(product);
+  document.getElementById('rParts').textContent = product.rack ? product.room + ' / ' + product.rack + ' / ' + product.level + (product.extra ? ' +' + product.extra.length : '') : '-';
+  document.getElementById('rQty').textContent = Number(product.qty).toLocaleString('en-US');
   const b = document.getElementById('rBadge');
   if (product.qty <= 0) { b.className = 'badge out'; b.textContent = 'نافد'; }
   else if (product.qty <= LOW_STOCK) { b.className = 'badge low'; b.textContent = 'منخفض'; }
@@ -626,7 +743,12 @@ function showProduct(sku) {
   renderOthers(sku, product);
   document.getElementById('resultPanel').classList.add('show');
   document.getElementById('notFound').classList.remove('show');
+  if (!product.rack) { clearHighlight(); setActiveChip(null); return; }
   highlightShelf(product.room, product.rack, product.level); setActiveChip(product.room);
+  (product.extra || []).forEach(([r, v]) => {
+    const m = shelfMeshes[product.room + '-' + r + '-' + v]; if (!m) return;
+    m.material.color.setHex(0xffcc33); m.material.emissive.setHex(0x996600); highlighted.push(m);
+  });
 }
 function search() {
   const q = document.getElementById('searchInput').value.trim();
@@ -684,11 +806,19 @@ function locationExists(room, rack, level) {
   return !!nums && level >= 1 && level <= Math.max(...nums);
 }
 function applyEdit(sku, v) {
-  if (!PRODUCTS[sku] || !v) return;
+  if (!PRODUCTS[sku] || !v || !(v.at > CATALOG_AT)) return;   // edits older than the loaded catalog are stale
+  if ('extra' in v) { if (Array.isArray(v.extra) && v.extra.length) PRODUCTS[sku].extra = v.extra; else delete PRODUCTS[sku].extra; }
   if (v.room && v.rack && v.level && locationExists(v.room, v.rack, v.level)) Object.assign(PRODUCTS[sku], { room: v.room, rack: v.rack, level: v.level });
   if (Number.isFinite(v.qty) && v.qty >= 0) PRODUCTS[sku].qty = v.qty;
 }
+const LS_CATALOG = 'warehouse-catalog-v1';
+function useCatalog(c) {
+  if (!c || !c.products || !(c.at > CATALOG_AT)) return false;
+  Object.keys(PRODUCTS).forEach(k => delete PRODUCTS[k]);
+  Object.assign(PRODUCTS, c.products); CATALOG_AT = c.at; return true;
+}
 async function initDb() {
+  try { useCatalog(JSON.parse(localStorage.getItem(LS_CATALOG))); } catch (e) {}
   const local = lsLoad();
   Object.keys(local).forEach(k => applyEdit(k, local[k]));
   try {
@@ -696,6 +826,7 @@ async function initDb() {
     const db = await claude.use('db');
     if (!db) return;
     dbRef = db;
+    try { const c = await db.doc('catalog/current').get(); if (c && c.exists !== false) useCatalog(typeof c.data === 'function' ? c.data() : c); } catch (e) {}
     const snap = await db.collection('locations').get();
     snap.docs.forEach(d => applyEdit(d.id, d.data()));
   } catch (e) { /* no shared db here - local storage only */ }
@@ -724,6 +855,7 @@ function fillEditLevelOptions(room, rack, selected) {
 function openEdit() {
   if (!editingSku) return;
   const p = PRODUCTS[editingSku];
+  if (!p.room) { p.room = 'R3'; }
   fillEditRoomOptions(p.room);
   fillEditRackOptions(p.room, p.rack);
   fillEditLevelOptions(p.room, p.rack, p.level);
@@ -749,8 +881,11 @@ document.getElementById('saveEditBtn').addEventListener('click', async () => {
   const status = document.getElementById('editStatus');
   if (!room || !rack || !level) return;
   if (!Number.isFinite(qty) || qty < 0) { status.style.display = 'block'; status.className = 'edit-status err'; status.textContent = 'أدخل كمية صحيحة (0 أو أكثر)'; return; }
-  const rec = { room, rack, level, qty };
-  PRODUCTS[editingSku] = Object.assign({}, PRODUCTS[editingSku], rec);
+  const cur = PRODUCTS[editingSku];
+  const moved = cur.room !== room || cur.rack !== rack || cur.level !== level;
+  const rec = { room, rack, level, qty, extra: moved ? [] : (cur.extra || []), at: Date.now() };
+  PRODUCTS[editingSku] = Object.assign({}, cur, rec);
+  if (!rec.extra.length) delete PRODUCTS[editingSku].extra;
   const savedLocal = lsSave(editingSku, rec);
   status.style.display = 'block';
   if (dbRef) {
@@ -773,7 +908,7 @@ function updateStats() {
   const list = Object.values(PRODUCTS);
   const out = list.filter(p => p.qty <= 0).length, low = list.filter(p => p.qty > 0 && p.qty <= LOW_STOCK).length;
   const k = document.getElementById('kpis'); k.innerHTML = '';
-  [['', 'غرفة', 17], ['', 'رف', nAisles], ['', 'مستوى', nLevels], ['', 'منتج', list.length], ['out', 'نافد', out], ['low', 'منخفض', low]].forEach(([c, l, n]) => {
+  [['', 'غرفة', 17], ['', 'رف', nAisles], ['', 'مستوى', nLevels], ['', 'منتج', list.length], ['out', 'نافد', out], ['low', 'منخفض', low], ['out', 'بدون موقع', list.filter(p => !p.rack).length]].forEach(([c, l, n]) => {
     if (c && !n) return;
     const e = document.createElement('span'); e.className = 'kpi ' + c;
     const b = document.createElement('b'); b.textContent = n; e.appendChild(b); e.appendChild(document.createTextNode(' ' + l)); k.appendChild(e);
@@ -781,8 +916,8 @@ function updateStats() {
 }
 document.getElementById('exportBtn').addEventListener('click', () => {
   const esc = v => '"' + String(v).replace(/"/g, '""') + '"';
-  const rows = [['SKU', 'الاسم', 'الباركود', 'الغرفة', 'الرف', 'المستوى', 'الموقع', 'الكمية']];
-  Object.entries(PRODUCTS).forEach(([k, p]) => rows.push([k, p.name, p.barcode, p.room, p.rack, p.level, locationCode(p.room, p.rack, p.level), p.qty]));
+  const rows = [['ProductCode', 'Barcode', 'Name', 'Description', 'StockBalance', 'مكان المنتج-Custom']];
+  Object.entries(PRODUCTS).forEach(([k, p]) => rows.push([k, p.barcode, p.name, p.model || '', p.qty, prodLocs(p).length ? locText(p) : '']));
   const blob = new Blob(['\ufeff' + rows.map(r => r.map(esc).join(',')).join('\n')], { type: 'text/csv;charset=utf-8' });
   (async () => {
     try {
@@ -792,6 +927,64 @@ document.getElementById('exportBtn').addEventListener('click', () => {
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'warehouse-products.csv';
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   })();
+});
+
+// ===== Excel import (same columns as the POS backup file) =====
+function loadXlsx() {
+  if (window.XLSX) return Promise.resolve(window.XLSX);
+  return new Promise((ok, no) => {
+    const sc = document.createElement('script');
+    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    sc.onload = () => ok(window.XLSX); sc.onerror = () => no(new Error('load')); document.head.appendChild(sc);
+  });
+}
+function parseLocation(raw) {
+  const t = String(raw || '').trim().toUpperCase().replace(/\s+/g, '');
+  const m = t.match(/^([RM]\d+)-(.+)$/); if (!m || !WAREHOUSE[m[1]]) return null;
+  const locs = [];
+  for (const part of m[2].split('+')) {
+    const x = part.match(/^([A-Z])(\d+)$/); if (!x) return null;
+    if (!locationExists(m[1], x[1], +x[2])) return null;
+    locs.push([x[1], +x[2]]);
+  }
+  return locs.length ? { room: m[1], locs } : null;
+}
+function rowsToCatalog(rows) {
+  const pick = (r, ...names) => { for (const n of names) { const k = Object.keys(r).find(h => h.trim().toLowerCase() === n.toLowerCase()); if (k) return r[k]; } return ''; };
+  const products = {}, report = { kept: 0, zero: 0, noLoc: [] };
+  rows.forEach(r => {
+    const sku = String(pick(r, 'ProductCode', 'SKU')).trim(); if (!sku) return;
+    const qty = Number(pick(r, 'StockBalance', 'الكمية')) || 0;
+    if (qty <= 0) { report.zero++; return; }
+    const loc = parseLocation(pick(r, 'مكان المنتج-Custom', 'الموقع'));
+    const p = { name: String(pick(r, 'Name', 'الاسم')).replace(/\s+/g, ' ').trim(), barcode: String(pick(r, 'Barcode', 'الباركود')).trim(),
+      model: String(pick(r, 'Description')).trim(), qty, room: loc ? loc.room : '', rack: loc ? loc.locs[0][0] : '', level: loc ? loc.locs[0][1] : 0 };
+    if (loc && loc.locs.length > 1) p.extra = loc.locs.slice(1);
+    if (!loc) report.noLoc.push(sku);
+    products[sku] = p; report.kept++;
+  });
+  return { products, report };
+}
+document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFile').click());
+document.getElementById('importFile').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  const bar = document.getElementById('statsBar');
+  bar.textContent = 'جاري قراءة الملف...';
+  try {
+    const X = await loadXlsx();
+    const wb = X.read(await f.arrayBuffer(), { type: 'array' });
+    const { products, report } = rowsToCatalog(X.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' }));
+    if (!report.kept) { bar.textContent = 'ما لقينا منتجات بالملف. تأكد إن الأعمدة مثل ملف النسخة الاحتياطية (ProductCode, Name, StockBalance...)'; return; }
+    const cat = { at: Date.now(), products };
+    useCatalog(cat);
+    try { localStorage.setItem(LS_CATALOG, JSON.stringify(cat)); } catch (err) {}
+    let shared = false;
+    if (dbRef) { try { await dbRef.doc('catalog/current').set(cat); shared = true; } catch (err) {} }
+    resetView(); updateStats();
+    bar.textContent = 'تم استيراد ' + report.kept + ' منتج، وتُرك ' + report.zero + ' بكمية 0' +
+      (report.noLoc.length ? '، و' + report.noLoc.length + ' بدون موقع صحيح (' + report.noLoc.slice(0, 5).join('، ') + (report.noLoc.length > 5 ? '…' : '') + ')' : '') +
+      (shared ? ' — محفوظ لكل الأجهزة' : ' — محفوظ على هذا الجهاز');
+  } catch (err) { bar.textContent = 'تعذر قراءة الملف. جرّب تحفظه من جديد بصيغة xlsx.'; }
 });
 initDb().then(updateStats); updateStats();
 </script>

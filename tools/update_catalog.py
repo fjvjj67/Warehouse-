@@ -4,10 +4,17 @@ Same rules as the page's Excel import: rows with StockBalance <= 0 are left out,
 locations like "R3-C6+C7" become a main shelf plus extra shelves, and any
 location that does not exist on the map is reported (product kept, no location).
 
-Usage: python3 tools/update_catalog.py path/to/Backup_Products_....xlsx [--dry-run]
+The product list is encrypted (AES-GCM, key from the password via PBKDF2-SHA256
+with the salt in tools/vault.json), so the public page shows nothing until the
+password is entered. The password is never stored in the repo.
+
+Usage: WAREHOUSE_PASSWORD=... python3 tools/update_catalog.py path/to/Backup_Products_....xlsx [--dry-run]
 """
-import json, re, sys, pathlib, datetime
+import base64, json, os, re, sys, pathlib, datetime
 import openpyxl
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 INDEX = ROOT / "index.html"
@@ -63,13 +70,22 @@ def main(src, dry):
         print("  no location:", x)
     if dry:
         return
+    pw = os.environ.get("WAREHOUSE_PASSWORD")
+    if not pw:
+        sys.exit("set WAREHOUSE_PASSWORD to encrypt the product list")
+    vault = json.loads((ROOT / "tools" / "vault.json").read_text())
+    key = PBKDF2HMAC(hashes.SHA256(), 32, base64.b64decode(vault["salt"]), vault["iter"]).derive(pw.encode())
+    iv = os.urandom(12)
+    ct = AESGCM(key).encrypt(iv, json.dumps(products, ensure_ascii=False, separators=(",", ":")).encode(), None)
+    enc = {"salt": vault["salt"], "iter": vault["iter"], "iv": base64.b64encode(iv).decode(), "ct": base64.b64encode(ct).decode()}
     now = datetime.datetime.now(datetime.timezone.utc)
-    body = ",\n".join(f"  {json.dumps(k, ensure_ascii=False)}: {json.dumps(v, ensure_ascii=False)}" for k, v in products.items())
     block = (f"// Source: {pathlib.Path(src).name} (items with stock 0 left out). Update with tools/update_catalog.py.\n"
              f"const CATALOG_DATE = Date.UTC({now.year}, {now.month - 1}, {now.day}, {now.hour}, {now.minute});\n"
-             f"let CATALOG_AT = CATALOG_DATE;\nconst PRODUCTS = {{\n{body}\n}};\n")
+             f"let CATALOG_AT = CATALOG_DATE;\nconst PRODUCTS = {{}};   // filled after unlocking\n"
+             f"const VAULT = {json.dumps(enc)};\n")
     start = html.index("// Source: ")
-    end = html.index("\n};\n", html.index("const PRODUCTS = {")) + 4
+    m = re.search(r"const VAULT = .*?;\n", html)
+    end = m.end() if m else html.index("\n};\n", html.index("const PRODUCTS = {")) + 4
     INDEX.write_text(html[:start] + block + html[end:], encoding="utf-8")
     print("index.html updated")
 

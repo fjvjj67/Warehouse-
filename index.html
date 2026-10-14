@@ -46,7 +46,7 @@
 }
 * { margin:0; padding:0; box-sizing:border-box; }
 html, body { height:100%; font-family:var(--font-body); background:var(--panel); color:var(--text); font-size:14px; overflow:hidden; overscroll-behavior:none; -webkit-tap-highlight-color:transparent; }
-.room-chip, .top-view-btn, .tool-btn, .legend { -webkit-user-select:none; user-select:none; }
+.room-chip, .top-view-btn, .tool-btn { -webkit-user-select:none; user-select:none; }
 button, input, select { font-family:inherit; }
 :focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 .app { display:flex; flex-direction:column; height:100%; position:relative; }
@@ -76,9 +76,6 @@ button, input, select { font-family:inherit; }
 #canvas-container { width:100%; height:100%; touch-action:none; }
 .map-tools { position:absolute; top:12px; left:12px; display:flex; flex-direction:column; gap:8px; z-index:5; }
 .top-view-btn { background:var(--panel); color:var(--text); border:1px solid var(--border-strong); border-radius:10px; padding:8px 12px; font-size:13px; font-weight:600; cursor:pointer; box-shadow:var(--shadow); }
-.legend { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:8px 10px; font-size:11px; color:var(--text-secondary); display:grid; gap:5px; box-shadow:var(--shadow); }
-.legend i { display:inline-block; width:10px; height:10px; border-radius:3px; margin-left:6px; vertical-align:-1px; }
-@media (max-width:520px) { .legend { display:none; } }
 
 .result-panel { position:absolute; bottom:12px; left:12px; right:12px; background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:16px; box-shadow:var(--shadow); display:none; max-height:55%; overflow-y:auto; z-index:6; }
 .result-panel.show { display:block; }
@@ -172,12 +169,6 @@ button, input, select { font-family:inherit; }
     <div class="canvas-wrap">
       <div class="map-tools">
         <button class="top-view-btn" id="topViewBtn">عرض المخزن كامل</button>
-        <div class="legend" aria-label="دليل الألوان">
-          <div><i style="background:#ffcc33"></i>المستوى المحدد</div>
-          <div><i style="background:#a8b3c4"></i>مستوى رف</div>
-          <div><i style="background:#a9cc7c"></i>ممر</div>
-          <div><i style="background:#f5c56b"></i>المكتب</div>
-        </div>
       </div>
       <div id="canvas-container"></div>
       <div class="toast" id="toast" role="status"></div>

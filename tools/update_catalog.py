@@ -65,7 +65,7 @@ def main(src, dry):
         return
     now = datetime.datetime.now(datetime.timezone.utc)
     body = ",\n".join(f"  {json.dumps(k, ensure_ascii=False)}: {json.dumps(v, ensure_ascii=False)}" for k, v in products.items())
-    block = (f"// Source: {pathlib.Path(src).name} (items with stock 0 left out). Replace with the Excel import button.\n"
+    block = (f"// Source: {pathlib.Path(src).name} (items with stock 0 left out). Update with tools/update_catalog.py.\n"
              f"const CATALOG_DATE = Date.UTC({now.year}, {now.month - 1}, {now.day}, {now.hour}, {now.minute});\n"
              f"let CATALOG_AT = CATALOG_DATE;\nconst PRODUCTS = {{\n{body}\n}};\n")
     start = html.index("// Source: ")

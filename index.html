@@ -117,21 +117,6 @@ button, input, select { font-family:inherit; }
 .sg-loc { font-size:12px; font-weight:700; font-family:var(--font-code); background:var(--loc-bg); color:var(--loc-text); padding:4px 8px; border-radius:6px; white-space:nowrap; direction:ltr; }
 .sg-empty { padding:14px; font-size:13px; color:var(--text-muted); text-align:center; }
 
-.edit-btn { background:var(--panel-2); border:1px solid var(--border-strong); color:var(--text); font-size:12px; font-weight:600; padding:6px 10px; border-radius:8px; cursor:pointer; white-space:nowrap; }
-.edit-btn:hover { border-color:var(--accent); color:var(--accent); }
-.edit-form { display:none; margin-top:12px; border-top:1px solid var(--border); padding-top:12px; }
-.edit-form.show { display:block; }
-.edit-row { display:flex; gap:8px; margin-bottom:8px; }
-.edit-row > div { flex:1; min-width:0; }
-.edit-row label { display:block; font-size:11px; color:var(--text-muted); margin-bottom:4px; }
-.edit-row select, .edit-row input { width:100%; padding:8px; border:1px solid var(--border-strong); border-radius:8px; background:var(--panel-2); color:var(--text); font-size:14px; }
-.edit-actions { display:flex; gap:8px; }
-.edit-actions button { flex:1; padding:9px; border-radius:8px; border:none; font-size:13px; font-weight:700; cursor:pointer; }
-.save-btn { background:var(--accent); color:#fff; }
-.cancel-btn { background:var(--panel-2); color:var(--text-secondary); border:1px solid var(--border-strong) !important; }
-.edit-status { font-size:12px; margin-top:8px; text-align:center; display:none; }
-.edit-status.ok { color:var(--success-text); }
-.edit-status.err { color:var(--danger-text); }
 .others { margin-bottom:10px; font-size:12px; color:var(--text-muted); }
 .others .chip { display:inline-block; margin:4px 0 0 4px; padding:4px 10px; border-radius:999px; border:1px solid var(--border-strong); background:var(--panel-2); color:var(--text); font-size:12px; font-weight:600; cursor:pointer; }
 .toast { position:absolute; top:12px; right:12px; left:auto; max-width:calc(100% - 24px); background:var(--panel); color:var(--text); border:1px solid var(--border); border-radius:10px; padding:8px 12px; font-size:13px; box-shadow:var(--shadow); z-index:7; opacity:0; transform:translateY(-6px); transition:opacity .2s, transform .2s; pointer-events:none; }
@@ -175,7 +160,7 @@ button, input, select { font-family:inherit; }
       <div class="result-panel" id="resultPanel">
         <div class="result-header">
           <div><div class="result-title" id="rName">-</div><div class="result-sku" id="rSku">-</div></div>
-          <div style="display:flex; gap:6px; align-items:flex-start;"><button class="edit-btn" id="editBtn">تعديل</button><button class="close-btn" id="closeResult" aria-label="اغلاق">&times;</button></div>
+          <div style="display:flex; gap:6px; align-items:flex-start;"><button class="close-btn" id="closeResult" aria-label="اغلاق">&times;</button></div>
         </div>
         <div class="location-code" id="rLocation">-</div>
         <div class="info-grid">
@@ -183,21 +168,7 @@ button, input, select { font-family:inherit; }
           <div class="info-item"><div class="l">الحالة</div><div class="v"><span class="badge" id="rBadge">-</span></div></div>
         </div>
         <div class="others" id="rOthers"></div>
-        <div class="edit-form" id="editForm">
-          <div class="edit-row">
-            <div><label>الغرفة</label><select id="editRoom"></select></div>
-            <div><label>الرف</label><select id="editRack"></select></div>
-            <div><label>المستوى</label><select id="editLevel"></select></div>
-          </div>
-          <div class="edit-row">
-            <div><label>الكمية</label><input type="number" id="editQty" min="0" step="1" inputmode="numeric"></div>
-          </div>
-          <div class="edit-actions">
-            <button class="save-btn" id="saveEditBtn">حفظ</button>
-            <button class="cancel-btn" id="cancelEditBtn">إلغاء</button>
-          </div>
-          <div class="edit-status" id="editStatus"></div>
-        </div>
+
       </div>
       <div class="not-found" id="notFound">ما لقينا منتج بهذا الاسم أو الرمز. تأكد من الكتابة أو جرّب SKU آخر.</div>
     </div>
@@ -205,8 +176,6 @@ button, input, select { font-family:inherit; }
   <div class="footer gutter">
     <div class="kpis" id="kpis"></div>
     <div class="stats" id="statsBar">اضغط غرفة لرؤية رفوفها، واضغط أي مستوى لمعرفة ما عليه</div>
-    <button class="tool-btn" id="importBtn">استيراد<span class="long"> Excel</span></button>
-    <input type="file" id="importFile" accept=".xlsx,.xls,.csv" hidden>
     <button class="tool-btn" id="exportBtn">تصدير<span class="long"> CSV</span></button>
   </div>
 </div>
@@ -214,7 +183,7 @@ button, input, select { font-family:inherit; }
 <script>
 const WAREHOUSE = {"R1": {"layout": {"x": -3.8, "z": -7.8, "w": 2.2, "d": 2.1}, "aisles": {"A": [1, 2, 3], "B": [1, 2, 3, 4]}}, "R2": {"layout": {"x": -6.6, "z": -7.8, "w": 2.2, "d": 2.1}, "aisles": {"A": [1, 2, 3, 4, 5, 6], "B": [1, 2, 3, 4, 5, 6, 7], "C": [1, 2, 3, 4, 5]}}, "R3": {"layout": {"x": -9.4, "z": -7.8, "w": 2.2, "d": 2.1}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7, 8], "B": [1, 2, 3, 4, 5, 6, 7, 8], "C": [1, 2, 3, 4, 5, 6, 7, 8], "D": [1, 2, 3, 4, 5, 6, 7, 8], "E": [1, 2, 3, 4, 5, 6, 7, 8], "F": [1, 2, 3, 4, 5, 6, 7, 8], "G": [1, 2, 3, 4, 5, 6, 7], "H": [1, 2, 3, 4, 5, 6, 7], "I": [1, 2, 3, 4, 5, 6, 7], "J": [1, 2, 3, 4, 5, 6, 7, 8], "K": [1, 2, 3, 4, 5, 6, 7, 8], "L": [1, 2, 3, 4, 5, 6, 7], "M": [1, 2, 3, 4, 5, 6, 7], "N": [1, 2, 3, 4, 5, 6, 7], "O": [1, 2, 3, 4, 5, 6, 7]}}, "R4": {"layout": {"x": -3.4, "z": -0.7, "w": 1.9, "d": 1.6}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7, 8], "B": [1, 2, 3, 4, 5, 6, 7, 8, 9], "C": [1, 2, 3, 4, 5, 6], "D": [1, 2, 3, 4, 5, 6, 7], "E": [1, 2, 3, 4, 5, 6, 7], "F": [1, 2, 3, 4, 5, 6, 7], "G": [1, 2, 3, 4, 5, 6, 7], "H": [1, 2, 3, 4, 5, 6, 7], "I": [1, 2, 3, 4, 5, 6, 7]}}, "R5": {"layout": {"x": -3.4, "z": 1.6, "w": 1.9, "d": 1.9}, "aisles": {"A": [1, 2, 3], "B": [1, 2, 3, 4], "C": [1, 2, 3, 4, 5, 6, 7], "D": [1, 2, 3, 4, 5, 6, 7, 8]}}, "R6": {"layout": {"x": -9.6, "z": -3.0, "w": 2.2, "d": 4.8}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7], "B": [1, 2, 3, 4, 5, 6, 7], "C": [1, 2, 3, 4, 5, 6], "D": [1, 2, 3, 4, 5, 6, 7, 8], "E": [1, 2, 3, 4, 5, 6, 7], "F": [1, 2, 3, 4, 5, 6, 7], "G": [1, 2, 3, 4, 5, 6, 7], "H": [1, 2, 3, 4, 5, 6, 7]}}, "R7": {"layout": {"x": -9.6, "z": 3.2, "w": 2.2, "d": 5.6}, "aisles": {"A": [1, 2, 3, 4, 5], "B": [1, 2, 3, 4, 5], "C": [1, 2, 3, 4, 5, 6, 7], "D": [1, 2, 3, 4, 5, 6, 7], "E": [1, 2, 3, 4, 5, 6, 7], "F": [1, 2, 3, 4, 5, 6, 7], "G": [1, 2, 3, 4, 5, 6, 7, 8], "H": [1, 2, 3, 4, 5, 6, 7], "I": [1, 2, 3, 4, 5, 6, 7], "J": [1, 2, 3, 4, 5, 6, 7, 8], "K": [1, 2, 3, 4, 5, 6], "L": [1, 2, 3, 4, 5, 6], "M": [1, 2, 3, 4, 5, 6], "N": [1, 2, 3, 4, 5, 6], "O": [1, 2, 3, 4, 5, 6, 7], "P": [1, 2, 3, 4, 5, 6, 7]}}, "R8": {"layout": {"x": -6.6, "z": 7.2, "w": 3.2, "d": 2.2}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7], "B": [1, 2, 3, 4, 5, 6, 7], "C": [1, 2, 3, 4, 5, 6, 7], "D": [1, 2, 3, 4, 5, 6, 7], "E": [1, 2, 3, 4, 5, 6, 7], "F": [1, 2, 3, 4, 5, 6, 7], "G": [1, 2, 3, 4, 5, 6, 7], "H": [1, 2, 3, 4, 5, 6, 7], "I": [1, 2, 3, 4, 5, 6, 7]}}, "R9": {"layout": {"x": -3.2, "z": 7.2, "w": 3.2, "d": 2.2}, "aisles": {"A": [1, 2, 3, 4, 5, 6], "B": [1, 2, 3, 4, 5, 6], "C": [1, 2, 3, 4, 5, 6], "D": [1, 2, 3, 4, 5, 6], "E": [1, 2, 3, 4, 5], "F": [1, 2, 3, 4, 5, 6, 7], "G": [1, 2, 3, 4, 5, 6, 7], "H": [1, 2, 3, 4, 5, 6, 7], "I": [1, 2, 3, 4, 5, 6, 7], "J": [1, 2, 3, 4, 5, 6, 7], "K": [1, 2, 3, 4, 5, 6, 7], "L": [1, 2, 3, 4, 5, 6, 7], "M": [1, 2, 3, 4, 5, 6, 7], "N": [1, 2, 3, 4, 5, 6, 7], "O": [1, 2, 3, 4, 5, 6], "P": [1, 2, 3, 4, 5, 6], "Q": [1, 2, 3, 4, 5, 6], "R": [1, 2, 3, 4, 5, 6]}}, "R10": {"layout": {"x": 0.3, "z": 7.2, "w": 3.0, "d": 2.2}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7, 8], "B": [1, 2, 3, 4, 5, 6, 7, 8], "C": [1, 2, 3, 4, 5, 6], "D": [1, 2, 3, 4, 5, 6], "E": [1, 2, 3, 4, 5, 6], "F": [1, 2, 3, 4, 5, 6], "G": [1, 2, 3, 4, 5, 6], "H": [1, 2, 3, 4, 5, 6], "I": [1, 2, 3, 4, 5, 6, 7, 8], "J": [1, 2, 3, 4, 5, 6, 7, 8], "K": [1, 2, 3, 4, 5, 6, 7, 8]}}, "R11": {"layout": {"x": 3.8, "z": 7.2, "w": 3.4, "d": 2.2}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7, 8, 9], "B": [1, 2, 3, 4, 5, 6, 7, 8, 9], "C": [1, 2, 3, 4, 5], "D": [1, 2, 3, 4, 5], "E": [1, 2, 3, 4, 5], "F": [1, 2, 3, 4, 5]}}, "R12": {"layout": {"x": -0.7, "z": 3.9, "w": 7.6, "d": 1.5}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7], "B": [1, 2, 3, 4, 5, 6, 7], "C": [1, 2, 3, 4, 5, 6, 7], "D": [1, 2, 3, 4, 5, 6, 7], "E": [1, 2, 3, 4, 5, 6, 7], "F": [1, 2, 3, 4, 5, 6, 7], "G": [1, 2, 3, 4, 5, 6, 7], "H": [1, 2, 3, 4, 5], "I": [1, 2, 3, 4, 5, 6, 7], "J": [1, 2, 3, 4, 5, 6, 7], "K": [1, 2, 3, 4, 5], "L": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], "M": [1, 2, 3, 4, 5, 6, 7], "N": [1, 2, 3, 4, 5, 6, 7], "O": [1, 2, 3, 4, 5, 6, 7], "P": [1, 2, 3, 4, 5, 6, 7], "Q": [1, 2, 3, 4, 5, 6, 7, 8, 9], "R": [1, 2, 3, 4, 5, 6, 7, 8, 9], "S": [1, 2, 3, 4, 5, 6, 7, 8, 9], "T": [1, 2, 3, 4, 5, 6, 7, 8, 9], "U": [1, 2, 3, 4, 5, 6, 7, 8]}}, "R13": {"layout": {"x": 8.6, "z": 3.2, "w": 2.2, "d": 5.6}, "aisles": {"A": [1, 2, 3, 4], "B": [1, 2, 3, 4], "C": [1, 2, 3, 4], "D": [1, 2, 3, 4], "E": [1, 2, 3, 4], "F": [1, 2, 3, 4], "G": [1, 2, 3, 4], "H": [1, 2, 3, 4, 5, 6, 7], "I": [1, 2, 3, 4, 5, 6, 7]}}, "R14": {"layout": {"x": 8.6, "z": -3.0, "w": 2.2, "d": 4.8}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7], "B": [1, 2, 3, 4, 5, 6, 7], "C": [1, 2, 3, 4, 5, 6, 7], "D": [1, 2, 3, 4, 5, 6, 7], "E": [1, 2, 3, 4, 5, 6], "F": [1, 2, 3, 4, 5, 6], "G": [1, 2, 3, 4, 5, 6, 7], "H": [1, 2, 3, 4, 5, 6], "I": [1, 2, 3, 4, 5, 6], "J": [1, 2, 3, 4, 5, 6], "K": [1, 2, 3, 4, 5, 6], "L": [1, 2, 3, 4, 5, 6], "M": [1, 2, 3, 4, 5, 6], "N": [1, 2, 3, 4, 5, 6], "O": [1, 2, 3, 4, 5, 6]}}, "R15": {"layout": {"x": 7.6, "z": -7.8, "w": 3.0, "d": 2.1}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7, 8], "B": [1, 2, 3, 4, 5, 6, 7, 8], "C": [1, 2, 3, 4, 5, 6, 7, 8], "D": [1, 2, 3, 4, 5, 6, 7, 8], "E": [1, 2, 3, 4, 5, 6, 7, 8], "F": [1, 2, 3, 4, 5, 6, 7, 8], "G": [1, 2, 3, 4, 5, 6, 7, 8], "H": [1, 2, 3, 4, 5, 6, 7, 8], "I": [1, 2, 3, 4, 5, 6, 7, 8]}}, "R16": {"layout": {"x": 3.6, "z": -7.8, "w": 2.2, "d": 2.1}, "aisles": {"A": [1, 2, 3, 4, 5], "B": [1, 2, 3, 4, 5], "C": [1, 2, 3, 4, 5]}}, "R17": {"layout": {"x": 2.0, "z": 1.4, "w": 2.6, "d": 2.3}, "aisles": {"A": [1, 2, 3, 4], "B": [1, 2, 3, 4, 5, 6, 7, 8, 9], "C": [1, 2, 3, 4, 5, 6, 7, 8, 9], "D": [1, 2, 3, 4, 5, 6, 7, 8, 9], "E": [1, 2, 3, 4, 5, 6, 7, 8], "F": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], "G": [1, 2, 3, 4, 5, 6, 7, 8, 9], "H": [1, 2, 3, 4, 5, 6, 7, 8, 9], "I": [1, 2, 3, 4, 5, 6, 7, 8, 9], "J": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], "K": [1, 2, 3, 4, 5, 6, 7, 8, 9], "L": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]}}, "M1": {"layout": {"x": -5.4, "z": 1.6, "w": 0.5, "d": 4.9, "corridor": true}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7, 8], "B": [1, 2, 3, 4, 5, 6, 7, 8], "C": [1, 2, 3, 4, 5, 6, 7, 8], "D": [1, 2, 3, 4, 5, 6, 7], "E": [1, 2, 3, 4, 5, 6, 7], "F": [1, 2, 3, 4, 5, 6, 7], "G": [1, 2, 3, 4, 5, 6, 7], "H": [1, 2, 3, 4, 5, 6, 7], "I": [1, 2, 3, 4, 5, 6, 7], "J": [1, 2, 3, 4, 5, 6]}}, "M2": {"layout": {"x": -0.7, "z": 5.6, "w": 8.6, "d": 0.5, "corridor": true}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7, 8], "B": [1, 2, 3, 4, 5, 6, 7, 8], "C": [1, 2, 3, 4, 5, 6, 7, 8], "D": [1, 2, 3, 4, 5, 6, 7, 8], "E": [1, 2, 3, 4, 5, 6, 7, 8], "F": [1, 2, 3, 4, 5, 6, 7, 8]}}, "M3": {"layout": {"x": 4.0, "z": 1.6, "w": 0.5, "d": 4.9, "corridor": true}, "aisles": {"A": [1, 2, 3, 4, 5, 6, 7, 8], "B": [1, 2, 3, 4, 5, 6, 7, 8], "C": [1, 2, 3, 4, 5, 6], "D": [1, 2, 3, 4, 5, 6, 7, 8], "E": [1, 2, 3, 4, 5, 6, 7, 8], "F": [1, 2, 3, 4, 5, 6, 7, 8], "G": [1, 2, 3, 4, 5, 6, 7, 8], "H": [1, 2, 3, 4, 5, 6, 7, 8], "I": [1, 2, 3, 4, 5, 6, 7], "J": [1, 2, 3, 4, 5, 6, 7], "K": [1, 2, 3, 4, 5, 6, 7]}}};
 
-// Source: b7f206bf-Backup_Products_4999723_20261014.xlsx (items with stock 0 left out). Replace with the Excel import button.
+// Source: b7f206bf-Backup_Products_4999723_20261014.xlsx (items with stock 0 left out). Update with tools/update_catalog.py.
 const CATALOG_DATE = Date.UTC(2026, 9, 14, 16, 11);
 let CATALOG_AT = CATALOG_DATE;
 const PRODUCTS = {
@@ -779,7 +748,6 @@ function renderOthers(sku, product) {
 }
 function showProduct(sku) {
   const product = PRODUCTS[sku]; if (!product) return;
-  editingSku = sku;
   hideSuggest();
   document.getElementById('rName').textContent = product.name;
   document.getElementById('rSku').textContent = sku + (product.model ? ' · ' + product.model : '') + (product.barcode ? ' · ' + product.barcode : '');
@@ -859,113 +827,11 @@ const nAisles = Object.values(WAREHOUSE).reduce((a, z) => a + Object.keys(z.aisl
 const nLevels = Object.values(WAREHOUSE).reduce((a, z) => a + Object.values(z.aisles).reduce((x, n) => x + n.length, 0), 0);
 
 
-// ===== persistent edits: shared db when available, localStorage fallback =====
-let dbRef = null;
-const LS_KEY = 'warehouse-product-edits-v1';
-function lsLoad() { try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch (e) { return {}; } }
-function lsSave(sku, v) { try { const all = lsLoad(); all[sku] = v; localStorage.setItem(LS_KEY, JSON.stringify(all)); return true; } catch (e) { return false; } }
+// ===== read-only view: data comes from Daftra via tools/update_catalog.py =====
 function locationExists(room, rack, level) {
   const nums = ((WAREHOUSE[room] || {}).aisles || {})[rack];
   return !!nums && level >= 1 && level <= Math.max(...nums);
 }
-function applyEdit(sku, v) {
-  if (!PRODUCTS[sku] || !v || !(v.at > CATALOG_AT)) return;   // edits older than the loaded catalog are stale
-  if ('extra' in v) { if (Array.isArray(v.extra) && v.extra.length) PRODUCTS[sku].extra = v.extra; else delete PRODUCTS[sku].extra; }
-  if (v.room && v.rack && v.level && locationExists(v.room, v.rack, v.level)) Object.assign(PRODUCTS[sku], { room: v.room, rack: v.rack, level: v.level });
-  if (Number.isFinite(v.qty) && v.qty >= 0) PRODUCTS[sku].qty = v.qty;
-}
-const LS_CATALOG = 'warehouse-catalog-v1';
-function useCatalog(c) {
-  if (!c || !c.products || !(c.at > CATALOG_AT)) return false;
-  Object.keys(PRODUCTS).forEach(k => delete PRODUCTS[k]);
-  Object.assign(PRODUCTS, c.products); CATALOG_AT = c.at; return true;
-}
-async function initDb() {
-  try { useCatalog(JSON.parse(localStorage.getItem(LS_CATALOG))); } catch (e) {}
-  const local = lsLoad();
-  Object.keys(local).forEach(k => applyEdit(k, local[k]));
-  try {
-    if (typeof claude === 'undefined') return;
-    const db = await claude.use('db');
-    if (!db) return;
-    dbRef = db;
-    try { const c = await db.doc('catalog/current').get(); if (c && c.exists !== false) useCatalog(typeof c.data === 'function' ? c.data() : c); } catch (e) {}
-    const snap = await db.collection('locations').get();
-    snap.docs.forEach(d => applyEdit(d.id, d.data()));
-  } catch (e) { /* no shared db here - local storage only */ }
-}
-
-let editingSku = null;
-function fillEditRoomOptions(selected) {
-  const sel = document.getElementById('editRoom');
-  sel.innerHTML = '';
-  Object.keys(WAREHOUSE).filter(z => !WAREHOUSE[z].layout.corridor).sort((a, b) => parseInt(a.slice(1)) - parseInt(b.slice(1)))
-    .forEach(z => { const o = document.createElement('option'); o.value = z; o.textContent = z; if (z === selected) o.selected = true; sel.appendChild(o); });
-}
-function fillEditRackOptions(room, selected) {
-  const sel = document.getElementById('editRack');
-  sel.innerHTML = '';
-  const racks = Object.keys((WAREHOUSE[room] || {}).aisles || {}).sort();
-  racks.forEach(r => { const o = document.createElement('option'); o.value = r; o.textContent = r; if (r === selected) o.selected = true; sel.appendChild(o); });
-}
-function fillEditLevelOptions(room, rack, selected) {
-  const sel = document.getElementById('editLevel');
-  sel.innerHTML = '';
-  const nums = ((WAREHOUSE[room] || {}).aisles || {})[rack] || [];
-  const max = nums.length ? Math.max(...nums) : 1;
-  for (let lv = 1; lv <= max; lv++) { const o = document.createElement('option'); o.value = lv; o.textContent = lv; if (lv === selected) o.selected = true; sel.appendChild(o); }
-}
-function openEdit() {
-  if (!editingSku) return;
-  const p = PRODUCTS[editingSku];
-  if (!p.room) { p.room = 'R3'; }
-  fillEditRoomOptions(p.room);
-  fillEditRackOptions(p.room, p.rack);
-  fillEditLevelOptions(p.room, p.rack, p.level);
-  document.getElementById('editQty').value = p.qty;
-  document.getElementById('editStatus').style.display = 'none';
-  document.getElementById('editForm').classList.add('show'); applyViewOffset();
-}
-function closeEdit() { document.getElementById('editForm').classList.remove('show'); applyViewOffset(); }
-document.getElementById('editRoom').addEventListener('change', e => {
-  fillEditRackOptions(e.target.value, null);
-  fillEditLevelOptions(e.target.value, document.getElementById('editRack').value, null);
-});
-document.getElementById('editRack').addEventListener('change', () => {
-  fillEditLevelOptions(document.getElementById('editRoom').value, document.getElementById('editRack').value, null);
-});
-document.getElementById('editBtn').addEventListener('click', openEdit);
-document.getElementById('cancelEditBtn').addEventListener('click', closeEdit);
-document.getElementById('saveEditBtn').addEventListener('click', async () => {
-  const room = document.getElementById('editRoom').value;
-  const rack = document.getElementById('editRack').value;
-  const level = parseInt(document.getElementById('editLevel').value);
-  const qty = parseInt(document.getElementById('editQty').value);
-  const status = document.getElementById('editStatus');
-  if (!room || !rack || !level) return;
-  if (!Number.isFinite(qty) || qty < 0) { status.style.display = 'block'; status.className = 'edit-status err'; status.textContent = 'أدخل كمية صحيحة (0 أو أكثر)'; return; }
-  const cur = PRODUCTS[editingSku];
-  const moved = cur.room !== room || cur.rack !== rack || cur.level !== level;
-  const rec = { room, rack, level, qty, extra: moved ? [] : (cur.extra || []), at: Date.now() };
-  PRODUCTS[editingSku] = Object.assign({}, cur, rec);
-  if (!rec.extra.length) delete PRODUCTS[editingSku].extra;
-  const savedLocal = lsSave(editingSku, rec);
-  status.style.display = 'block';
-  if (dbRef) {
-    try {
-      await dbRef.collection('locations').doc(editingSku).set(rec);
-      status.className = 'edit-status ok'; status.textContent = '✓ تم الحفظ — يظهر على كل الأجهزة';
-    } catch (e) {
-      status.className = 'edit-status err'; status.textContent = 'تعذر الحفظ على السيرفر — محفوظ على هذا الجهاز فقط';
-    }
-  } else {
-    status.className = savedLocal ? 'edit-status ok' : 'edit-status err';
-    status.textContent = savedLocal ? '✓ محفوظ على هذا الجهاز' : 'تعذر الحفظ — التغيير مؤقت';
-  }
-  closeEdit();
-  showProduct(editingSku);
-  updateStats();
-});
 
 function updateStats() {
   const list = Object.values(PRODUCTS);
@@ -996,64 +862,7 @@ document.getElementById('exportBtn').addEventListener('click', () => {
   })();
 });
 
-// ===== Excel import (same columns as the POS backup file) =====
-function loadXlsx() {
-  if (window.XLSX) return Promise.resolve(window.XLSX);
-  return new Promise((ok, no) => {
-    const sc = document.createElement('script');
-    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-    sc.onload = () => ok(window.XLSX); sc.onerror = () => no(new Error('load')); document.head.appendChild(sc);
-  });
-}
-function parseLocation(raw) {
-  const t = String(raw || '').trim().toUpperCase().replace(/\s+/g, '');
-  const m = t.match(/^([RM]\d+)-(.+)$/); if (!m || !WAREHOUSE[m[1]]) return null;
-  const locs = [];
-  for (const part of m[2].split('+')) {
-    const x = part.match(/^([A-Z])(\d+)$/); if (!x) return null;
-    if (!locationExists(m[1], x[1], +x[2])) return null;
-    locs.push([x[1], +x[2]]);
-  }
-  return locs.length ? { room: m[1], locs } : null;
-}
-function rowsToCatalog(rows) {
-  const pick = (r, ...names) => { for (const n of names) { const k = Object.keys(r).find(h => h.trim().toLowerCase() === n.toLowerCase()); if (k) return r[k]; } return ''; };
-  const products = {}, report = { kept: 0, zero: 0, noLoc: [] };
-  rows.forEach(r => {
-    const sku = String(pick(r, 'ProductCode', 'SKU')).trim(); if (!sku) return;
-    const qty = Number(pick(r, 'StockBalance', 'الكمية')) || 0;
-    if (qty <= 0) { report.zero++; return; }
-    const loc = parseLocation(pick(r, 'مكان المنتج-Custom', 'الموقع'));
-    const p = { name: String(pick(r, 'Name', 'الاسم')).replace(/\s+/g, ' ').trim(), barcode: String(pick(r, 'Barcode', 'الباركود')).trim(),
-      model: String(pick(r, 'Description')).trim(), qty, room: loc ? loc.room : '', rack: loc ? loc.locs[0][0] : '', level: loc ? loc.locs[0][1] : 0 };
-    if (loc && loc.locs.length > 1) p.extra = loc.locs.slice(1);
-    if (!loc) report.noLoc.push(sku);
-    products[sku] = p; report.kept++;
-  });
-  return { products, report };
-}
-document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFile').click());
-document.getElementById('importFile').addEventListener('change', async e => {
-  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
-  const bar = document.getElementById('statsBar');
-  setStatus('جاري قراءة الملف...', true);
-  try {
-    const X = await loadXlsx();
-    const wb = X.read(await f.arrayBuffer(), { type: 'array' });
-    const { products, report } = rowsToCatalog(X.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' }));
-    if (!report.kept) { setStatus('ما لقينا منتجات بالملف. تأكد إن الأعمدة مثل ملف النسخة الاحتياطية (ProductCode, Name, StockBalance...)', true); return; }
-    const cat = { at: Date.now(), products };
-    useCatalog(cat);
-    try { localStorage.setItem(LS_CATALOG, JSON.stringify(cat)); } catch (err) {}
-    let shared = false;
-    if (dbRef) { try { await dbRef.doc('catalog/current').set(cat); shared = true; } catch (err) {} }
-    resetView(); updateStats();
-    setStatus('تم استيراد ' + report.kept + ' منتج، وتُرك ' + report.zero + ' بكمية 0' +
-      (report.noLoc.length ? '، و' + report.noLoc.length + ' بدون موقع صحيح (' + report.noLoc.slice(0, 5).join('، ') + (report.noLoc.length > 5 ? '…' : '') + ')' : '') +
-      (shared ? ' — محفوظ لكل الأجهزة' : ' — محفوظ على هذا الجهاز'), true);
-  } catch (err) { setStatus('تعذر قراءة الملف. جرّب تحفظه من جديد بصيغة xlsx.', true); }
-});
-initDb().then(updateStats); updateStats();
+updateStats();
 </script>
 </body>
 </html>

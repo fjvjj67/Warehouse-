@@ -521,6 +521,8 @@ function badgeTex(n, gold) {
   x.fillText(String(n), 48, 52);
   return (texCache[key] = new THREE.CanvasTexture(c));
 }
+// Corridors whose rack letters start at the bottom end: M1 from the R3 side, M3 from the R15 side
+const START_AT_BOTTOM = ['M1', 'M3'];
 function buildRacks(zone, L, racks, topReserve) {
   const names = Object.keys(racks).sort();
   const k = names.length; if (!k) return;
@@ -535,7 +537,8 @@ function buildRacks(zone, L, racks, topReserve) {
   const postGeo = new THREE.BoxGeometry(0.035, 1, 0.035);
   names.forEach((rack, i) => {
     const levels = Math.max(...racks[rack]);
-    const c = i % cols, r = Math.floor(i / cols);
+    const c = i % cols, r0 = Math.floor(i / cols);
+    const r = START_AT_BOTTOM.includes(zone) ? rows - 1 - r0 : r0;   // letters run from the corridor's entrance
     const x = L.x - L.w / 2 + pad + cw * (c + 0.5);
     const z = zStart + pad + cd * (r + 0.5);
     const H = levels * LEVEL_H;

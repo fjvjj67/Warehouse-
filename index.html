@@ -143,6 +143,7 @@ button, input, select { font-family:inherit; }
 .lock label.rem { display:flex; gap:8px; align-items:center; font-size:13px; color:var(--text-secondary); }
 .lock button { padding:12px; border:none; border-radius:10px; background:var(--accent); color:#fff; font-size:15px; font-weight:700; cursor:pointer; }
 .lock button:disabled { opacity:.6; }
+.lock label.rem input { width:auto; }
 .lock .err { color:var(--danger-text); font-size:13px; min-height:1em; }
 @media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
 </style>
@@ -152,7 +153,8 @@ button, input, select { font-family:inherit; }
   <form id="lockForm" autocomplete="off">
     <h1>خريطة مخزن AZAWI</h1>
     <p>أدخل كلمة المرور لعرض المنتجات ومواقعها.</p>
-    <input type="password" id="lockPw" placeholder="كلمة المرور" autocomplete="current-password" required>
+    <input type="password" id="lockPw" placeholder="كلمة المرور" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" inputmode="text" dir="ltr" required>
+    <label class="rem"><input type="checkbox" id="lockShow"> إظهار الكلمة</label>
     <label class="rem"><input type="checkbox" id="lockRemember" checked> تذكرني على هذا الجهاز</label>
     <button type="submit" id="lockBtn">دخول</button>
     <div class="err" id="lockErr" role="alert"></div>
@@ -767,6 +769,11 @@ document.getElementById('exportBtn').addEventListener('click', () => {
 // ===== password lock: the product list is AES-GCM encrypted (see tools/update_catalog.py) =====
 const KEY_STORE = 'warehouse-key-' + VAULT.salt;
 const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+// forgive phone keyboards: Arabic-Indic digits, capitals, stray spaces
+function normPw(v) {
+  return String(v).trim().replace(/[\u0660-\u0669]/g, d => d.charCodeAt(0) - 0x660).replace(/[\u06F0-\u06F9]/g, d => d.charCodeAt(0) - 0x6F0).replace(/\s+/g, '').toLowerCase();
+}
+document.getElementById('lockShow').addEventListener('change', e => { document.getElementById('lockPw').type = e.target.checked ? 'text' : 'password'; });
 async function deriveKey(pw) {
   const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveBits']);
   const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: b64(VAULT.salt), iterations: VAULT.iter, hash: 'SHA-256' }, base, 256);
@@ -789,7 +796,7 @@ document.getElementById('lockForm').addEventListener('submit', async e => {
   const btn = document.getElementById('lockBtn'), err = document.getElementById('lockErr');
   btn.disabled = true; err.textContent = '';
   try {
-    const raw = await deriveKey(document.getElementById('lockPw').value);
+    const raw = await deriveKey(normPw(document.getElementById('lockPw').value));
     await openVault(raw);
     if (document.getElementById('lockRemember').checked) { try { localStorage.setItem(KEY_STORE, btoa(String.fromCharCode(...raw))); } catch (x) {} }
     document.getElementById('lockPw').value = '';

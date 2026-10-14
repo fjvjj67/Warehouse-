@@ -45,7 +45,8 @@
   --scene:#1a2230; --shadow:0 10px 30px rgba(0,0,0,.45); color-scheme:dark;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
-html, body { height:100%; font-family:var(--font-body); background:var(--bg); color:var(--text); font-size:14px; }
+html, body { height:100%; font-family:var(--font-body); background:var(--panel); color:var(--text); font-size:14px; overflow:hidden; overscroll-behavior:none; -webkit-tap-highlight-color:transparent; }
+.room-chip, .top-view-btn, .tool-btn, .legend { -webkit-user-select:none; user-select:none; }
 button, input, select { font-family:inherit; }
 :focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 .app { display:flex; flex-direction:column; height:100%; position:relative; }
@@ -386,7 +387,7 @@ function makeLabel(text, sc) {
 function overviewPose() {
   const c = document.getElementById('canvas-container');
   const a = c.clientWidth / Math.max(1, c.clientHeight);
-  const W = 29.5, H = 23.5;
+  const W = 27.8, H = 21.6;
   const d = Math.max((W / 2) / (TAN_HALF * a), (H / 2) / TAN_HALF);
   const t = new THREE.Vector3(0, 0, 1.2);
   return { pos: new THREE.Vector3(0, d, 1.2 + d * 0.10), target: t };
@@ -402,7 +403,7 @@ function cssColor(name, fb) { const v = getComputedStyle(document.documentElemen
 function applySceneTheme() {
   if (!scene) return;
   const c = cssColor('--scene', '#e9edf3');
-  scene.background.set(c); if (groundMesh) groundMesh.material.color.set(c);
+  scene.background.set(c); if (groundMesh) groundMesh.material.color.set(c); kick();
 }
 if (window.matchMedia) { const mq = matchMedia('(prefers-color-scheme: dark)'); mq.addEventListener && mq.addEventListener('change', applySceneTheme); }
 new MutationObserver(applySceneTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
@@ -412,9 +413,9 @@ function initScene() {
   scene.background = new THREE.Color(cssColor('--scene', '#e9edf3'));
   camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 400);
 
-  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
   renderer.setSize(container.clientWidth, container.clientHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
   container.appendChild(renderer.domElement);
 
   scene.add(new THREE.AmbientLight(0xffffff, 0.9));
@@ -535,19 +536,19 @@ function buildRacks(zone, L, racks, topReserve) {
     rackGroups[zone + '-' + rack] = g;
   });
 }
-function showRackLabels(zone) { for (const z in rackLabels) rackLabels[z].forEach(s => s.visible = (z === zone)); }
+function showRackLabels(zone) { kick(); for (const z in rackLabels) rackLabels[z].forEach(s => s.visible = (z === zone)); }
 
 // ===== camera: animate + drag to pan + pinch/wheel to zoom =====
 function animateCamera(pos, look) {
   const id = ++animToken;
   const sp = camera.position.clone(), st = camTarget.clone();
-  let t = 0;
-  (function step() {
+  const t0 = performance.now(), dur = 520;
+  (function step(now) {
     if (id !== animToken) return;
-    t = Math.min(1, t + 0.06);
-    camera.position.lerpVectors(sp, pos, t);
-    camTarget.lerpVectors(st, look, t);
-    camera.lookAt(camTarget);
+    const t = Math.min(1, ((now || t0) - t0) / dur), e = easeInOut(t);
+    camera.position.lerpVectors(sp, pos, e);
+    camTarget.lerpVectors(st, look, e);
+    camera.lookAt(camTarget); kick();
     if (t < 1) requestAnimationFrame(step);
   })();
 }
@@ -557,7 +558,7 @@ function setupControls() {
   el.addEventListener('pointerdown', e => { el.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); moved = 0; animToken++;
     if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinchD = Math.hypot(a.x - b.x, a.y - b.y); } });
   el.addEventListener('pointermove', e => {
-    const p = ptrs.get(e.pointerId); if (!p) return;
+    const p = ptrs.get(e.pointerId); if (!p) return; kick();
     const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
     moved += Math.abs(dx) + Math.abs(dy);
     if (ptrs.size === 1) {
@@ -579,7 +580,7 @@ function setupControls() {
 function zoomBy(f) {
   const off = camera.position.clone().sub(camTarget);
   const len = Math.min(90, Math.max(3.5, off.length() * f));
-  off.setLength(len); camera.position.copy(camTarget).add(off); camera.lookAt(camTarget);
+  off.setLength(len); camera.position.copy(camTarget).add(off); camera.lookAt(camTarget); kick();
 }
 
 function pick(e) {
@@ -587,37 +588,52 @@ function pick(e) {
   mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
   mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
   raycaster.setFromCamera(mouse, camera);
+  if (poppedGroup) {                       // inside a rack: only its own levels are tappable
+    const own = []; poppedGroup.traverse(o => { if (o.userData && o.userData.isShelf) own.push(o); });
+    const h = raycaster.intersectObjects(own);
+    if (h.length) { const u = h[0].object.userData; selectShelf(u.zone, u.rack, u.level); }
+    else filterByRoom(poppedGroup.userData.zone);   // tapped empty space: step back out to the room
+    return;
+  }
   const hits = raycaster.intersectObjects([...Object.values(shelfMeshes), ...Object.values(roomOutlines)]);
-  if (!hits.length) return;
+  if (!hits.length) { if (currentRoom) resetView(); return; }   // empty space in a room: back to the whole warehouse
   const ud = hits[0].object.userData;
-  if (ud.isShelf) selectShelf(ud.zone, ud.rack, ud.level); else if (ud.zone) filterByRoom(ud.zone);
+  if (ud.isShelf) selectShelf(ud.zone, ud.rack, ud.level);
+  else if (ud.zone && ud.zone === currentRoom && !document.getElementById('resultPanel').classList.contains('show')) resetView();
+  else if (ud.zone) filterByRoom(ud.zone);
 }
 function onResize() {
   const c = document.getElementById('canvas-container');
   camera.aspect = c.clientWidth / c.clientHeight; camera.updateProjectionMatrix();
-  renderer.setSize(c.clientWidth, c.clientHeight);
+  renderer.setSize(c.clientWidth, c.clientHeight); kick();
 }
-function animate() { requestAnimationFrame(animate); renderer.render(scene, camera); }
+// render only while something changes (saves battery, keeps phones smooth)
+let dirty = 2;
+function kick() { dirty = Math.max(dirty, 2); }
+function animate() { requestAnimationFrame(animate); if (dirty > 0) { dirty--; renderer.render(scene, camera); } }
+const easeInOut = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
 // ===== highlight / pop-out =====
 const POP_S = 2.4;
 let poppedGroup = null;
+let currentRoom = null;
 function tweenGroup(g, toPos, toScale) {
-  const id = ++g.userData.tw, sp = g.position.clone(), ss = g.scale.x; let t = 0;
-  (function step() {
+  const id = ++g.userData.tw, sp = g.position.clone(), ss = g.scale.x;
+  const t0 = performance.now(), dur = 420;
+  (function step(now) {
     if (id !== g.userData.tw) return;
-    t = Math.min(1, t + 0.08); const e = 1 - Math.pow(1 - t, 3);
-    g.position.lerpVectors(sp, toPos, e); g.scale.setScalar(ss + (toScale - ss) * e);
+    const t = Math.min(1, ((now || t0) - t0) / dur), e = 1 - Math.pow(1 - t, 3);
+    g.position.lerpVectors(sp, toPos, e); g.scale.setScalar(ss + (toScale - ss) * e); kick();
     if (t < 1) requestAnimationFrame(step);
   })();
 }
-function setFade(active) {
+function setFade(active) { kick();
   for (const key in rackGroups) {
     const g = rackGroups[key], f = active && g !== active;
     g.traverse(o => { if (o.isMesh) { const m = o.material; m.transparent = !!f; m.opacity = f ? 0.07 : 1; m.depthWrite = !f; m.needsUpdate = true; } });
   }
 }
-function showOnlyLabel(g) {
+function showOnlyLabel(g) { kick();
   for (const z in rackLabels) rackLabels[z].forEach(s => s.visible = false);
   if (g) g.userData.label.visible = true;
 }
@@ -648,7 +664,7 @@ function focusPopped(g) {
   const d = Math.max(4.2, (Hs / 2 + 0.7) / TAN_HALF, (u.rw * POP_S / 2 + 0.9) / (TAN_HALF * a)) + u.rd * POP_S / 2 + 0.8;
   animateCamera(new THREE.Vector3(u.base.x, Hs * 0.5 + 1.0, zf + d), new THREE.Vector3(u.base.x, Hs * 0.5, zf));
 }
-function resetGold() {
+function resetGold() { kick();
   highlighted.forEach(m => { m.material.color.setHex(m.userData.baseColor); m.material.emissive.setHex(0x000000); });
   highlighted = [];
 }
@@ -768,7 +784,7 @@ function filterByRoom(zone) {
   const a = WAREHOUSE[zone].aisles;
   document.getElementById('statsBar').textContent = zone + ': ' + Object.keys(a).length + ' رف، ' + Object.values(a).reduce((s, n) => s + n.length, 0) + ' مستوى';
 }
-function setActiveChip(zone) { document.querySelectorAll('.room-chip').forEach(c => c.classList.toggle('active', c.dataset.zone === zone)); }
+function setActiveChip(zone) { currentRoom = zone || null; document.querySelectorAll('.room-chip').forEach(c => c.classList.toggle('active', c.dataset.zone === zone)); }
 function buildChips() {
   const wrap = document.getElementById('roomChips');
   const zones = Object.keys(WAREHOUSE).sort((a, b) => (a[0] === b[0] ? parseInt(a.slice(1)) - parseInt(b.slice(1)) : (a[0] === 'R' ? -1 : 1)));

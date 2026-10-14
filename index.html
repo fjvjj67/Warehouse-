@@ -982,7 +982,7 @@ function updateStats() {
   const k = document.getElementById('kpis'); k.innerHTML = '';
   const d = new Date(CATALOG_AT), days = Math.floor((Date.now() - CATALOG_AT) / 864e5);
   const up = document.createElement('span'); up.className = 'kpi ' + (days > 7 ? 'out' : 'upd');
-  up.textContent = 'آخر تحديث ' + String(d.getDate()).padStart(2, '0') + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + d.getFullYear() + (days > 7 ? ' (قبل ' + days + ' يوم)' : '');
+  up.textContent = 'آخر تحديث ' + String(d.getDate()).padStart(2, '0') + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + d.getFullYear() + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + (days > 7 ? ' (قبل ' + days + ' يوم)' : '');
   up.title = 'تاريخ آخر استيراد من دفترة'; k.appendChild(up);
   [['meta', 'غرفة', 17], ['meta', 'رف', nAisles], ['meta', 'مستوى', nLevels], ['', 'منتج', list.length], ['out', 'نافد', out], ['low', 'منخفض', low], ['out', 'بدون موقع', list.filter(p => !p.rack).length]].forEach(([c, l, n]) => {
     if (c && c !== 'meta' && !n) return;

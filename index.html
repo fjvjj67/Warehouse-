@@ -715,8 +715,14 @@ document.getElementById('exportBtn').addEventListener('click', () => {
   const rows = [['SKU', 'الاسم', 'الباركود', 'الغرفة', 'الرف', 'المستوى', 'الموقع', 'الكمية']];
   Object.entries(PRODUCTS).forEach(([k, p]) => rows.push([k, p.name, p.barcode, p.room, p.rack, p.level, locationCode(p.room, p.rack, p.level), p.qty]));
   const blob = new Blob(['\ufeff' + rows.map(r => r.map(esc).join(',')).join('\n')], { type: 'text/csv;charset=utf-8' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'warehouse-products.csv';
-  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  (async () => {
+    try {
+      const dl = typeof claude !== 'undefined' ? await claude.use('downloads') : null;
+      if (dl) { await dl.save({ filename: 'warehouse-products.csv', data: blob }); return; }
+    } catch (e) { return; }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'warehouse-products.csv';
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  })();
 });
 initDb().then(updateStats); updateStats();
 </script>

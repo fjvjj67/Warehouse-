@@ -4,120 +4,172 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>خريطة المخزن 3D - AZAWI</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;700&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
+/* Layout: one-screen tool. Search bar on top, room strip, 3D map fills the rest; details dock as a side sheet on wide screens, bottom sheet on phones. */
 :root {
-  --bg: #f4f5f7; --panel: #ffffff; --border: #e0e2e7; --border-strong: #c7cad1;
-  --text: #1a1c22; --text-secondary: #5c6070; --text-muted: #9497a3;
-  --accent: #2563eb; --accent-dark: #1d4ed8;
-  --success-bg: #e8f7ee; --success-text: #16793f;
-  --danger-bg: #fdeceb; --danger-text: #c22a1f;
-  --warn-bg: #fff6dd; --warn-text: #92660a;
+  --bg:#eef1f5; --panel:#ffffff; --panel-2:#f5f7fa; --border:#dde2ea; --border-strong:#c3cad6;
+  --text:#152033; --text-secondary:#4d5a70; --text-muted:#8590a3;
+  --accent:#1f5fa8; --accent-dark:#174a85; --accent-soft:#e3edf9;
+  --loc-bg:#ffd34d; --loc-text:#3a2a00;
+  --success-bg:#e4f5ea; --success-text:#17703c;
+  --danger-bg:#fde8e6; --danger-text:#b42318;
+  --warn-bg:#fff3d1; --warn-text:#8a5a00;
+  --scene:#e9edf3; --shadow:0 10px 30px rgba(21,32,51,.12);
+  --font-body:'IBM Plex Sans Arabic',-apple-system,'Segoe UI',Tahoma,Arial,sans-serif;
+  --font-code:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #111319; --panel: #1a1d26; --border: #2b2f3a; --border-strong: #3a3f4d;
-    --text: #eef0f4; --text-secondary: #a4a8b5; --text-muted: #6f7482;
-    --accent: #4d84ff; --accent-dark: #6c98ff;
-    --success-bg: #113321; --success-text: #52d98a;
-    --danger-bg: #3a1815; --danger-text: #ff8478;
-    --warn-bg: #3a2e0d; --warn-text: #f0c257;
+    --bg:#0e131b; --panel:#161d28; --panel-2:#1c2533; --border:#273243; --border-strong:#36445a;
+    --text:#e8edf5; --text-secondary:#a7b2c4; --text-muted:#6d7a8f;
+    --accent:#5b9bea; --accent-dark:#7db0f0; --accent-soft:#1b2c44;
+    --loc-bg:#f2c53d; --loc-text:#2a1f00;
+    --success-bg:#12301f; --success-text:#5fd690;
+    --danger-bg:#3a1714; --danger-text:#ff8a7d;
+    --warn-bg:#382a0b; --warn-text:#f2c25a;
+    --scene:#1a2230; --shadow:0 10px 30px rgba(0,0,0,.45); color-scheme:dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #111319; --panel: #1a1d26; --border: #2b2f3a; --border-strong: #3a3f4d;
-  --text: #eef0f4; --text-secondary: #a4a8b5; --text-muted: #6f7482;
-  --accent: #4d84ff; --accent-dark: #6c98ff;
-  --success-bg: #113321; --success-text: #52d98a;
-  --danger-bg: #3a1815; --danger-text: #ff8478;
-  --warn-bg: #3a2e0d; --warn-text: #f0c257;
+  --bg:#0e131b; --panel:#161d28; --panel-2:#1c2533; --border:#273243; --border-strong:#36445a;
+  --text:#e8edf5; --text-secondary:#a7b2c4; --text-muted:#6d7a8f;
+  --accent:#5b9bea; --accent-dark:#7db0f0; --accent-soft:#1b2c44;
+  --loc-bg:#f2c53d; --loc-text:#2a1f00;
+  --success-bg:#12301f; --success-text:#5fd690;
+  --danger-bg:#3a1714; --danger-text:#ff8a7d;
+  --warn-bg:#382a0b; --warn-text:#f2c25a;
+  --scene:#1a2230; --shadow:0 10px 30px rgba(0,0,0,.45); color-scheme:dark;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
-html, body { height:100%; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,Arial,sans-serif; background:var(--bg); color:var(--text);
-  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
-.app { display:flex; flex-direction:column; height:100%; }
-.topbar { background:var(--panel); border-bottom:1px solid var(--border); padding:10px 12px; display:flex; gap:8px; align-items:center; flex-shrink:0; }
-.topbar input { flex:1; padding:10px 12px; border:1px solid var(--border-strong); border-radius:8px; font-size:15px; background:var(--bg); color:var(--text); min-width:0; }
-.topbar input:focus { outline:none; border-color:var(--accent); }
-.topbar button { padding:10px 14px; border:none; border-radius:8px; background:var(--accent); color:#fff; font-size:14px; font-weight:600; cursor:pointer; white-space:nowrap; }
-.topbar button:active { background:var(--accent-dark); }
-.body-area { flex:1; display:flex; min-height:0; position:relative; }
-.canvas-wrap { flex:1; position:relative; background:var(--panel); }
-#canvas-container { width:100%; height:100%; touch-action:none; }
-.room-chips { display:flex; gap:6px; overflow-x:auto; padding:8px 12px; background:var(--panel); border-bottom:1px solid var(--border); flex-shrink:0; -webkit-overflow-scrolling:touch; }
-.room-chip { flex-shrink:0; padding:6px 12px; border-radius:999px; border:1px solid var(--border-strong); background:var(--bg); color:var(--text-secondary); font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; }
+html, body { height:100%; font-family:var(--font-body); background:var(--bg); color:var(--text); font-size:14px; }
+button, input, select { font-family:inherit; }
+:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.app { display:flex; flex-direction:column; height:100%; position:relative; }
+.gutter { padding-left:max(12px, env(safe-area-inset-left,0px)); padding-right:max(12px, env(safe-area-inset-right,0px)); }
+
+.topbar { background:var(--panel); border-bottom:1px solid var(--border); padding-block:10px; display:flex; gap:12px; align-items:center; flex-shrink:0; }
+.brand { display:flex; flex-direction:column; line-height:1.15; flex-shrink:0; }
+.brand b { font-size:15px; font-weight:700; letter-spacing:.02em; }
+.brand span { font-size:11px; color:var(--text-muted); }
+.search { flex:1; display:flex; align-items:center; gap:8px; min-width:0; background:var(--panel-2); border:1px solid var(--border-strong); border-radius:10px; padding-inline:10px; }
+.search:focus-within { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+.search svg { flex-shrink:0; color:var(--text-muted); }
+.search input { flex:1; min-width:0; border:none; background:transparent; color:var(--text); font-size:15px; padding-block:10px; }
+.search input:focus { outline:none; }
+.topbar .primary { padding:10px 16px; border:none; border-radius:10px; background:var(--accent); color:#fff; font-size:14px; font-weight:600; cursor:pointer; white-space:nowrap; }
+.topbar .primary:hover { background:var(--accent-dark); }
+@media (max-width:520px) { .brand { display:none; } }
+
+.room-chips { display:flex; gap:6px; overflow-x:auto; padding-block:8px; background:var(--panel); border-bottom:1px solid var(--border); flex-shrink:0; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+.room-chip { flex-shrink:0; padding:5px 12px; border-radius:8px; border:1px solid var(--border); background:var(--panel-2); color:var(--text-secondary); font-size:13px; font-weight:600; font-family:var(--font-code); cursor:pointer; white-space:nowrap; }
+.room-chip.corr { border-style:dashed; }
+.room-chip:hover { border-color:var(--border-strong); color:var(--text); }
 .room-chip.active { background:var(--accent); border-color:var(--accent); color:#fff; }
-.top-view-btn { position:absolute; top:12px; left:12px; background:var(--panel); border:1px solid var(--border-strong); border-radius:8px; padding:8px 12px; font-size:13px; font-weight:600; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.1); z-index:5; }
-.result-panel { position:absolute; bottom:12px; left:12px; right:12px; background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:14px; box-shadow:0 4px 20px rgba(0,0,0,0.12); display:none; max-height:45%; overflow-y:auto; }
+
+.body-area { flex:1; display:flex; min-height:0; position:relative; }
+.canvas-wrap { flex:1; position:relative; background:var(--scene); overflow:hidden; }
+#canvas-container { width:100%; height:100%; touch-action:none; }
+.map-tools { position:absolute; top:12px; left:12px; display:flex; flex-direction:column; gap:8px; z-index:5; }
+.top-view-btn { background:var(--panel); color:var(--text); border:1px solid var(--border-strong); border-radius:10px; padding:8px 12px; font-size:13px; font-weight:600; cursor:pointer; box-shadow:var(--shadow); }
+.legend { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:8px 10px; font-size:11px; color:var(--text-secondary); display:grid; gap:5px; box-shadow:var(--shadow); }
+.legend i { display:inline-block; width:10px; height:10px; border-radius:3px; margin-left:6px; vertical-align:-1px; }
+@media (max-width:520px) { .legend { display:none; } }
+
+.result-panel { position:absolute; bottom:12px; left:12px; right:12px; background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:16px; box-shadow:var(--shadow); display:none; max-height:55%; overflow-y:auto; z-index:6; }
 .result-panel.show { display:block; }
-.result-header { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:10px; }
-.result-title { font-size:16px; font-weight:700; }
-.result-sku { font-size:12px; color:var(--text-muted); font-family:monospace; }
-.close-btn { background:none; border:none; font-size:20px; color:var(--text-muted); cursor:pointer; line-height:1; padding:4px; }
-.location-code { display:inline-block; background:var(--warn-bg); color:var(--warn-text); font-weight:700; font-size:15px; padding:6px 12px; border-radius:8px; font-family:monospace; margin-bottom:10px; }
-.info-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
-.info-item { background:var(--bg); border-radius:8px; padding:8px 10px; }
-.info-item .l { font-size:11px; color:var(--text-muted); }
-.info-item .v { font-size:15px; font-weight:700; margin-top:2px; }
-.badge { display:inline-block; padding:5px 12px; border-radius:8px; font-size:13px; font-weight:700; }
+@media (min-width:820px) { .result-panel { left:auto; right:16px; top:16px; bottom:auto; width:360px; max-height:calc(100% - 32px); } }
+.result-header { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:12px; }
+.result-title { font-size:17px; font-weight:700; text-wrap:balance; }
+.result-sku { font-size:12px; color:var(--text-muted); font-family:var(--font-code); margin-top:2px; }
+.close-btn { background:none; border:none; font-size:22px; color:var(--text-muted); cursor:pointer; line-height:1; padding:2px 6px; border-radius:6px; }
+.close-btn:hover { background:var(--panel-2); color:var(--text); }
+.location-code { display:flex; align-items:center; gap:8px; background:var(--loc-bg); color:var(--loc-text); font-weight:700; font-size:20px; padding:10px 14px; border-radius:10px; font-family:var(--font-code); margin-bottom:12px; direction:ltr; justify-content:flex-end; letter-spacing:.04em; }
+.info-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-bottom:12px; }
+.info-item { background:var(--panel-2); border-radius:8px; padding:8px 10px; min-width:0; }
+.info-item .l { font-size:11px; color:var(--text-muted); letter-spacing:.02em; }
+.info-item .v { font-size:15px; font-weight:700; margin-top:3px; font-variant-numeric:tabular-nums; font-family:var(--font-code); }
+.badge { display:inline-block; padding:3px 8px; border-radius:6px; font-size:12px; font-weight:700; font-family:var(--font-body); }
 .badge.ok { background:var(--success-bg); color:var(--success-text); }
 .badge.out { background:var(--danger-bg); color:var(--danger-text); }
-.not-found { position:absolute; bottom:12px; left:12px; right:12px; background:var(--danger-bg); color:var(--danger-text); border-radius:12px; padding:14px; font-size:14px; font-weight:600; display:none; }
+.badge.low { background:var(--warn-bg); color:var(--warn-text); }
+.not-found { position:absolute; bottom:12px; left:12px; right:12px; background:var(--danger-bg); color:var(--danger-text); border-radius:12px; padding:14px; font-size:14px; font-weight:600; display:none; z-index:6; }
 .not-found.show { display:block; }
-.hint-bar { padding:8px 12px; font-size:12px; color:var(--text-muted); background:var(--panel); border-top:1px solid var(--border); text-align:center; flex-shrink:0; }
-.stats { font-size:11px; color:var(--text-muted); padding:0 12px 8px; background:var(--panel); }
 
-.app { position:relative; }
-.suggest { position:absolute; left:8px; right:8px; top:58px; z-index:30; background:var(--panel); border:1px solid var(--border-strong); border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,0.18); max-height:55%; overflow-y:auto; display:none; }
+.footer { background:var(--panel); border-top:1px solid var(--border); padding-block:8px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; flex-shrink:0; }
+.kpis { display:flex; gap:6px; flex-wrap:wrap; }
+.kpi { font-size:12px; padding:3px 9px; border-radius:6px; background:var(--panel-2); color:var(--text-secondary); font-variant-numeric:tabular-nums; }
+.kpi b { color:var(--text); }
+.kpi.out { background:var(--danger-bg); color:var(--danger-text); } .kpi.out b { color:inherit; }
+.kpi.low { background:var(--warn-bg); color:var(--warn-text); } .kpi.low b { color:inherit; }
+.stats { flex:1; min-width:0; font-size:12px; color:var(--text-muted); }
+.tool-btn { background:var(--panel-2); border:1px solid var(--border-strong); color:var(--text); font-size:12px; font-weight:600; padding:5px 10px; border-radius:8px; cursor:pointer; }
+.tool-btn:hover { border-color:var(--accent); color:var(--accent); }
+
+.suggest { position:absolute; left:8px; right:8px; top:58px; z-index:30; background:var(--panel); border:1px solid var(--border-strong); border-radius:12px; box-shadow:var(--shadow); max-height:55%; overflow-y:auto; display:none; }
 .sg-item { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 12px; border-bottom:1px solid var(--border); cursor:pointer; }
 .sg-item:last-child { border-bottom:none; }
-.sg-item:active { background:var(--bg); }
+.sg-item:hover, .sg-item:active { background:var(--panel-2); }
 .sg-name { font-size:14px; font-weight:700; }
-.sg-sku { font-size:11px; color:var(--text-muted); font-family:monospace; margin-top:2px; }
-.sg-loc { font-size:12px; font-weight:700; font-family:monospace; background:var(--warn-bg); color:var(--warn-text); padding:4px 8px; border-radius:6px; white-space:nowrap; }
+.sg-sku { font-size:11px; color:var(--text-muted); font-family:var(--font-code); margin-top:2px; }
+.sg-loc { font-size:12px; font-weight:700; font-family:var(--font-code); background:var(--loc-bg); color:var(--loc-text); padding:4px 8px; border-radius:6px; white-space:nowrap; direction:ltr; }
 .sg-empty { padding:14px; font-size:13px; color:var(--text-muted); text-align:center; }
 
-.edit-btn { background:var(--bg); border:1px solid var(--border-strong); color:var(--text); font-size:12px; font-weight:700; padding:6px 10px; border-radius:8px; cursor:pointer; }
-.edit-form { display:none; margin-top:10px; border-top:1px solid var(--border); padding-top:10px; }
+.edit-btn { background:var(--panel-2); border:1px solid var(--border-strong); color:var(--text); font-size:12px; font-weight:600; padding:6px 10px; border-radius:8px; cursor:pointer; white-space:nowrap; }
+.edit-btn:hover { border-color:var(--accent); color:var(--accent); }
+.edit-form { display:none; margin-top:12px; border-top:1px solid var(--border); padding-top:12px; }
 .edit-form.show { display:block; }
 .edit-row { display:flex; gap:8px; margin-bottom:8px; }
-.edit-row > div { flex:1; }
+.edit-row > div { flex:1; min-width:0; }
 .edit-row label { display:block; font-size:11px; color:var(--text-muted); margin-bottom:4px; }
-.edit-row select { width:100%; padding:8px; border:1px solid var(--border-strong); border-radius:6px; background:var(--bg); color:var(--text); font-size:14px; }
+.edit-row select, .edit-row input { width:100%; padding:8px; border:1px solid var(--border-strong); border-radius:8px; background:var(--panel-2); color:var(--text); font-size:14px; }
 .edit-actions { display:flex; gap:8px; }
 .edit-actions button { flex:1; padding:9px; border-radius:8px; border:none; font-size:13px; font-weight:700; cursor:pointer; }
 .save-btn { background:var(--accent); color:#fff; }
-.cancel-btn { background:var(--bg); color:var(--text-secondary); border:1px solid var(--border-strong) !important; }
+.cancel-btn { background:var(--panel-2); color:var(--text-secondary); border:1px solid var(--border-strong) !important; }
 .edit-status { font-size:12px; margin-top:8px; text-align:center; display:none; }
 .edit-status.ok { color:var(--success-text); }
 .edit-status.err { color:var(--danger-text); }
-.badge.low { background:var(--warn-bg); color:var(--warn-text); }
-.edit-row input { width:100%; padding:8px; border:1px solid var(--border-strong); border-radius:6px; background:var(--bg); color:var(--text); font-size:14px; }
 .others { margin-bottom:10px; font-size:12px; color:var(--text-muted); }
-.others .chip { display:inline-block; margin:4px 4px 0 0; padding:4px 10px; border-radius:999px; border:1px solid var(--border-strong); background:var(--bg); color:var(--text); font-size:12px; font-weight:600; cursor:pointer; }
-.tool-btn { background:var(--bg); border:1px solid var(--border-strong); color:var(--text); font-size:12px; font-weight:700; padding:2px 10px; border-radius:6px; cursor:pointer; margin-right:8px; }
+.others .chip { display:inline-block; margin:4px 0 0 4px; padding:4px 10px; border-radius:999px; border:1px solid var(--border-strong); background:var(--panel-2); color:var(--text); font-size:12px; font-weight:600; cursor:pointer; }
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
 </style>
 </head>
 <body>
 <div class="app">
-  <div class="topbar">
-    <input type="text" id="searchInput" placeholder="ابحث بالاسم أو SKU أو امسح باركود..." autocomplete="off" autofocus />
-    <button id="searchBtn">بحث</button>
+  <div class="topbar gutter">
+    <div class="brand"><b>AZAWI</b><span>خريطة المخزن</span></div>
+    <label class="search" for="searchInput">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+      <input type="text" id="searchInput" placeholder="اسم المنتج أو SKU أو امسح الباركود" autocomplete="off" autofocus />
+    </label>
+    <button class="primary" id="searchBtn">بحث</button>
   </div>
   <div class="suggest" id="suggest"></div>
-  <div class="room-chips" id="roomChips"></div>
+  <div class="room-chips gutter" id="roomChips"></div>
   <div class="body-area">
     <div class="canvas-wrap">
-      <div class="top-view-btn" id="topViewBtn">⬆ عرض كامل</div>
+      <div class="map-tools">
+        <button class="top-view-btn" id="topViewBtn">عرض المخزن كامل</button>
+        <div class="legend" aria-label="دليل الألوان">
+          <div><i style="background:#ffcc33"></i>المستوى المحدد</div>
+          <div><i style="background:#a8b3c4"></i>مستوى رف</div>
+          <div><i style="background:#a9cc7c"></i>ممر</div>
+          <div><i style="background:#f5c56b"></i>المكتب</div>
+        </div>
+      </div>
       <div id="canvas-container"></div>
       <div class="result-panel" id="resultPanel">
         <div class="result-header">
           <div><div class="result-title" id="rName">-</div><div class="result-sku" id="rSku">-</div></div>
-          <div style="display:flex; gap:6px; align-items:flex-start;"><button class="edit-btn" id="editBtn">✏️ تعديل الموقع</button><button class="close-btn" id="closeResult" aria-label="اغلاق">&times;</button></div>
+          <div style="display:flex; gap:6px; align-items:flex-start;"><button class="edit-btn" id="editBtn">تعديل</button><button class="close-btn" id="closeResult" aria-label="اغلاق">&times;</button></div>
         </div>
         <div class="location-code" id="rLocation">-</div>
         <div class="info-grid">
-          <div class="info-item"><div class="l">الغرفة / الرف / المستوى</div><div class="v" id="rParts">-</div></div>
+          <div class="info-item"><div class="l">غرفة / رف / مستوى</div><div class="v" id="rParts">-</div></div>
           <div class="info-item"><div class="l">الكمية</div><div class="v" id="rQty">-</div></div>
           <div class="info-item"><div class="l">الحالة</div><div class="v"><span class="badge" id="rBadge">-</span></div></div>
         </div>
@@ -132,17 +184,20 @@ html, body { height:100%; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI
             <div><label>الكمية</label><input type="number" id="editQty" min="0" step="1" inputmode="numeric"></div>
           </div>
           <div class="edit-actions">
-            <button class="save-btn" id="saveEditBtn">💾 حفظ</button>
+            <button class="save-btn" id="saveEditBtn">حفظ</button>
             <button class="cancel-btn" id="cancelEditBtn">إلغاء</button>
           </div>
           <div class="edit-status" id="editStatus"></div>
         </div>
       </div>
-      <div class="not-found" id="notFound">❌ المنتج غير موجود — جرب SKU آخر</div>
+      <div class="not-found" id="notFound">ما لقينا منتج بهذا الاسم أو الرمز. تأكد من الكتابة أو جرّب SKU آخر.</div>
     </div>
   </div>
-  <div class="stats"><span id="statsBar"></span><button class="tool-btn" id="exportBtn">⬇ تصدير CSV</button></div>
-  <div class="hint-bar">امسح الباركود بجهاز Zebra TC27 أو اكتب SKU يدوياً — اضغط أي غرفة لرؤية رفوفها، واضغط أي مستوى لتحديده</div>
+  <div class="footer gutter">
+    <div class="kpis" id="kpis"></div>
+    <div class="stats" id="statsBar">اضغط غرفة لرؤية رفوفها، واضغط أي مستوى لمعرفة ما عليه</div>
+    <button class="tool-btn" id="exportBtn">تصدير CSV</button>
+  </div>
 </div>
 
 <script>
@@ -225,10 +280,19 @@ function goOverview(animated) {
   else { camera.position.copy(p.pos); camTarget.copy(p.target); camera.lookAt(camTarget); }
 }
 
+let groundMesh = null;
+function cssColor(name, fb) { const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim(); return v || fb; }
+function applySceneTheme() {
+  if (!scene) return;
+  const c = cssColor('--scene', '#e9edf3');
+  scene.background.set(c); if (groundMesh) groundMesh.material.color.set(c);
+}
+if (window.matchMedia) { const mq = matchMedia('(prefers-color-scheme: dark)'); mq.addEventListener && mq.addEventListener('change', applySceneTheme); }
+new MutationObserver(applySceneTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 function initScene() {
   const container = document.getElementById('canvas-container');
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xeceef3);
+  scene.background = new THREE.Color(cssColor('--scene', '#e9edf3'));
   camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 400);
 
   renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -250,7 +314,7 @@ function initScene() {
 }
 
 function drawPlanBase() {
-  box(60, 0.02, 44, 0xeceef3, 0, -0.01, 1);
+  groundMesh = box(60, 0.02, 44, cssColor('--scene', '#e9edf3'), 0, -0.01, 1);
   boxPx([152, 931, 972, 1445], 0.04, 0xa9cc7c, 0.02);            // green corridors M1/M2/M3
   boxPx([209, 988, 916, 1388], 0.06, 0xf1f2f4, 0.03);            // inner block
   // entrance (dashed area in the plan) + arrow pointing into the warehouse
@@ -552,13 +616,13 @@ function showProduct(sku) {
   hideSuggest();
   document.getElementById('rName').textContent = product.name;
   document.getElementById('rSku').textContent = sku;
-  document.getElementById('rLocation').textContent = '📍 ' + locationCode(product.room, product.rack, product.level);
+  document.getElementById('rLocation').textContent = '' + locationCode(product.room, product.rack, product.level);
   document.getElementById('rParts').textContent = product.room + ' / ' + product.rack + ' / ' + product.level;
   document.getElementById('rQty').textContent = product.qty;
   const b = document.getElementById('rBadge');
-  if (product.qty <= 0) { b.className = 'badge out'; b.textContent = 'غير متوفر ❌'; }
-  else if (product.qty <= LOW_STOCK) { b.className = 'badge low'; b.textContent = 'كمية منخفضة ⚠️'; }
-  else { b.className = 'badge ok'; b.textContent = 'متوفر ✅'; }
+  if (product.qty <= 0) { b.className = 'badge out'; b.textContent = 'نافد'; }
+  else if (product.qty <= LOW_STOCK) { b.className = 'badge low'; b.textContent = 'منخفض'; }
+  else { b.className = 'badge ok'; b.textContent = 'متوفر'; }
   renderOthers(sku, product);
   document.getElementById('resultPanel').classList.add('show');
   document.getElementById('notFound').classList.remove('show');
@@ -588,7 +652,7 @@ function buildChips() {
   const zones = Object.keys(WAREHOUSE).sort((a, b) => (a[0] === b[0] ? parseInt(a.slice(1)) - parseInt(b.slice(1)) : (a[0] === 'R' ? -1 : 1)));
   zones.forEach(zone => {
     const chip = document.createElement('div');
-    chip.className = 'room-chip'; chip.textContent = zone; chip.dataset.zone = zone;
+    chip.className = 'room-chip' + (zone[0] === 'M' ? ' corr' : ''); chip.textContent = zone; chip.dataset.zone = zone;
     chip.onclick = () => filterByRoom(zone); wrap.appendChild(chip);
   });
 }
@@ -707,8 +771,13 @@ document.getElementById('saveEditBtn').addEventListener('click', async () => {
 
 function updateStats() {
   const list = Object.values(PRODUCTS);
-  document.getElementById('statsBar').textContent = '17 غرفة + 3 ممرات، ' + nAisles + ' رف، ' + nLevels + ' مستوى — ' + list.length + ' منتج (' +
-    list.filter(p => p.qty <= 0).length + ' نافد، ' + list.filter(p => p.qty > 0 && p.qty <= LOW_STOCK).length + ' منخفض)';
+  const out = list.filter(p => p.qty <= 0).length, low = list.filter(p => p.qty > 0 && p.qty <= LOW_STOCK).length;
+  const k = document.getElementById('kpis'); k.innerHTML = '';
+  [['', 'غرفة', 17], ['', 'رف', nAisles], ['', 'مستوى', nLevels], ['', 'منتج', list.length], ['out', 'نافد', out], ['low', 'منخفض', low]].forEach(([c, l, n]) => {
+    if (c && !n) return;
+    const e = document.createElement('span'); e.className = 'kpi ' + c;
+    const b = document.createElement('b'); b.textContent = n; e.appendChild(b); e.appendChild(document.createTextNode(' ' + l)); k.appendChild(e);
+  });
 }
 document.getElementById('exportBtn').addEventListener('click', () => {
   const esc = v => '"' + String(v).replace(/"/g, '""') + '"';

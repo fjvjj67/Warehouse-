@@ -89,7 +89,7 @@ button, input, select { font-family:inherit; }
 .close-btn { background:none; border:none; font-size:22px; color:var(--text-muted); cursor:pointer; line-height:1; padding:2px 6px; border-radius:6px; }
 .close-btn:hover { background:var(--panel-2); color:var(--text); }
 .location-code { display:flex; align-items:center; gap:8px; background:var(--loc-bg); color:var(--loc-text); font-weight:700; font-size:20px; padding:10px 14px; border-radius:10px; font-family:var(--font-code); margin-bottom:12px; direction:ltr; justify-content:flex-end; letter-spacing:.04em; }
-.info-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-bottom:12px; }
+.info-grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:8px; margin-bottom:12px; }
 .info-item { background:var(--panel-2); border-radius:8px; padding:8px 10px; min-width:0; }
 .info-item .l { font-size:11px; color:var(--text-muted); letter-spacing:.02em; }
 .info-item .v { font-size:15px; font-weight:700; margin-top:3px; font-variant-numeric:tabular-nums; font-family:var(--font-code); }
@@ -136,6 +136,22 @@ button, input, select { font-family:inherit; }
 .edit-status.err { color:var(--danger-text); }
 .others { margin-bottom:10px; font-size:12px; color:var(--text-muted); }
 .others .chip { display:inline-block; margin:4px 0 0 4px; padding:4px 10px; border-radius:999px; border:1px solid var(--border-strong); background:var(--panel-2); color:var(--text); font-size:12px; font-weight:600; cursor:pointer; }
+.toast { position:absolute; top:12px; right:12px; left:auto; max-width:calc(100% - 24px); background:var(--panel); color:var(--text); border:1px solid var(--border); border-radius:10px; padding:8px 12px; font-size:13px; box-shadow:var(--shadow); z-index:7; opacity:0; transform:translateY(-6px); transition:opacity .2s, transform .2s; pointer-events:none; }
+.toast.show { opacity:1; transform:none; }
+@media (max-width:819px) {
+  .result-panel { padding:12px 14px; max-height:40%; bottom:8px; left:8px; right:8px; border-radius:14px; }
+  .result-header { margin-bottom:8px; }
+  .result-title { font-size:15px; }
+  .location-code { font-size:16px; padding:7px 12px; margin-bottom:8px; }
+  .info-grid { gap:6px; margin-bottom:6px; }
+  .info-item { padding:6px 10px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .info-item .v { margin-top:0; }
+  .footer { flex-wrap:nowrap; gap:8px; padding-block:6px; }
+  .kpis { flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; flex:1; min-width:0; }
+  .kpi.meta, .stats { display:none; }
+  .tool-btn { padding:5px 8px; white-space:nowrap; }
+  .tool-btn .long { display:none; }
+}
 @media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
 </style>
 </head>
@@ -163,6 +179,7 @@ button, input, select { font-family:inherit; }
         </div>
       </div>
       <div id="canvas-container"></div>
+      <div class="toast" id="toast" role="status"></div>
       <div class="result-panel" id="resultPanel">
         <div class="result-header">
           <div><div class="result-title" id="rName">-</div><div class="result-sku" id="rSku">-</div></div>
@@ -170,7 +187,6 @@ button, input, select { font-family:inherit; }
         </div>
         <div class="location-code" id="rLocation">-</div>
         <div class="info-grid">
-          <div class="info-item"><div class="l">غرفة / رف / مستوى</div><div class="v" id="rParts">-</div></div>
           <div class="info-item"><div class="l">الكمية</div><div class="v" id="rQty">-</div></div>
           <div class="info-item"><div class="l">الحالة</div><div class="v"><span class="badge" id="rBadge">-</span></div></div>
         </div>
@@ -197,9 +213,9 @@ button, input, select { font-family:inherit; }
   <div class="footer gutter">
     <div class="kpis" id="kpis"></div>
     <div class="stats" id="statsBar">اضغط غرفة لرؤية رفوفها، واضغط أي مستوى لمعرفة ما عليه</div>
-    <button class="tool-btn" id="importBtn">استيراد Excel</button>
+    <button class="tool-btn" id="importBtn">استيراد<span class="long"> Excel</span></button>
     <input type="file" id="importFile" accept=".xlsx,.xls,.csv" hidden>
-    <button class="tool-btn" id="exportBtn">تصدير CSV</button>
+    <button class="tool-btn" id="exportBtn">تصدير<span class="long"> CSV</span></button>
   </div>
 </div>
 
@@ -331,6 +347,15 @@ const PRODUCTS = {
   "FT-170": {"name": "فتنك تي 12-10", "barcode": "3972300022297", "model": "PE12-10", "qty": 225, "room": "R3", "rack": "K", "level": 7}
 };
 const LOW_STOCK = 10;
+const DEFAULT_STATUS = 'اضغط غرفة لرؤية رفوفها، واضغط أي مستوى لمعرفة ما عليه';
+let toastTimer = 0;
+function setStatus(msg, toast) {
+  document.getElementById('statsBar').textContent = msg || DEFAULT_STATUS;
+  const t = document.getElementById('toast'); if (!t) return;
+  clearTimeout(toastTimer);
+  if (toast && msg) { t.textContent = msg; t.classList.add('show'); toastTimer = setTimeout(() => t.classList.remove('show'), 3200); }
+  else t.classList.remove('show');
+}
 function locationCode(room, rack, level) { return room + '-' + rack + '-' + level; }
 function prodLocs(p) { return p.rack ? [[p.rack, p.level]].concat(p.extra || []) : []; }
 function locText(p) { const l = prodLocs(p); return l.length ? p.room + '-' + l.map(([r, v]) => r + v).join('+') : 'بدون موقع'; }
@@ -602,10 +627,24 @@ function pick(e) {
   else if (ud.zone && ud.zone === currentRoom && !document.getElementById('resultPanel').classList.contains('show')) resetView();
   else if (ud.zone) filterByRoom(ud.zone);
 }
+// keep the 3D focus in the part of the map the details panel does not cover
+function visibleArea() {
+  const c = document.getElementById('canvas-container'), W = c.clientWidth, H = Math.max(1, c.clientHeight);
+  const p = document.getElementById('resultPanel');
+  if (!p.classList.contains('show')) return { W, H, w: W, h: H, x: 0, y: 0 };
+  if (window.innerWidth >= 820) { const occ = p.offsetWidth + 16; return { W, H, w: Math.max(1, W - occ), h: H, x: occ / 2, y: 0 }; }
+  const occ = Math.min(H * 0.6, p.offsetHeight + 8); return { W, H, w: W, h: Math.max(1, H - occ), x: 0, y: occ / 2 };
+}
+function applyViewOffset() {
+  if (!camera) return;
+  const v = visibleArea();
+  if (v.x || v.y) camera.setViewOffset(v.W, v.H, v.x, v.y, v.W, v.H); else camera.clearViewOffset();
+  camera.updateProjectionMatrix(); kick();
+}
 function onResize() {
   const c = document.getElementById('canvas-container');
   camera.aspect = c.clientWidth / c.clientHeight; camera.updateProjectionMatrix();
-  renderer.setSize(c.clientWidth, c.clientHeight); kick();
+  renderer.setSize(c.clientWidth, c.clientHeight); applyViewOffset(); kick();
 }
 // render only while something changes (saves battery, keeps phones smooth)
 let dirty = 2;
@@ -660,8 +699,8 @@ function popRack(zone, rack, level) {
 function focusPopped(g) {
   const u = g.userData;
   const Hs = (u.H + 0.16) * POP_S, zf = u.base.z + u.rd * POP_S / 2 + 0.5;
-  const c = document.getElementById('canvas-container'); const a = c.clientWidth / Math.max(1, c.clientHeight);
-  const d = Math.max(4.2, (Hs / 2 + 0.7) / TAN_HALF, (u.rw * POP_S / 2 + 0.9) / (TAN_HALF * a)) + u.rd * POP_S / 2 + 0.8;
+  const v = visibleArea(), fh = v.h / v.H, fw = v.w / v.H;
+  const d = Math.max(4.2, (Hs / 2 + 0.5) / (TAN_HALF * fh), (u.rw * POP_S / 2 + 0.7) / (TAN_HALF * fw)) + u.rd * POP_S / 2 + 0.8;
   animateCamera(new THREE.Vector3(u.base.x, Hs * 0.5 + 1.0, zf + d), new THREE.Vector3(u.base.x, Hs * 0.5, zf));
 }
 function resetGold() { kick();
@@ -671,8 +710,8 @@ function resetGold() { kick();
 function clearHighlight() { resetGold(); unpopRack(); }
 function focusRoom(zone) {
   const L = roomBounds[zone]; if (!L) return;
-  const c = document.getElementById('canvas-container'); const a = c.clientWidth / Math.max(1, c.clientHeight);
-  const d = Math.max(5, (L.w / 2 + 0.8) / (TAN_HALF * a), (L.d / 2 + 0.8) / TAN_HALF);
+  const v = visibleArea();
+  const d = Math.max(5, (L.w / 2 + 0.8) / (TAN_HALF * v.w / v.H), (L.d / 2 + 0.8) / (TAN_HALF * v.h / v.H));
   animateCamera(new THREE.Vector3(L.x, d, L.z + d * 0.28), new THREE.Vector3(L.x, 0, L.z));
 }
 function highlightShelf(zone, rack, level) {
@@ -689,8 +728,8 @@ function selectShelf(zone, rack, level) {
   const hit = Object.entries(PRODUCTS).find(([, p]) => atShelf(p, zone, rack, level));
   document.getElementById('notFound').classList.remove('show');
   if (hit) { showProduct(hit[0]); return; }
-  document.getElementById('resultPanel').classList.remove('show');
-  document.getElementById('statsBar').textContent = 'الموقع المحدد: ' + locationCode(zone, rack, level) + ' — لا يوجد منتج مسجل هنا';
+  document.getElementById('resultPanel').classList.remove('show'); applyViewOffset();
+  setStatus('المستوى ' + locationCode(zone, rack, level) + ' فارغ، ما عليه منتج مسجل', true);
   highlightShelf(zone, rack, level); setActiveChip(zone);
 }
 
@@ -750,7 +789,6 @@ function showProduct(sku) {
   document.getElementById('rName').textContent = product.name;
   document.getElementById('rSku').textContent = sku + (product.model ? ' · ' + product.model : '') + (product.barcode ? ' · ' + product.barcode : '');
   document.getElementById('rLocation').textContent = locText(product);
-  document.getElementById('rParts').textContent = product.rack ? product.room + ' / ' + product.rack + ' / ' + product.level + (product.extra ? ' +' + product.extra.length : '') : '-';
   document.getElementById('rQty').textContent = Number(product.qty).toLocaleString('en-US');
   const b = document.getElementById('rBadge');
   if (product.qty <= 0) { b.className = 'badge out'; b.textContent = 'نافد'; }
@@ -759,6 +797,7 @@ function showProduct(sku) {
   renderOthers(sku, product);
   document.getElementById('resultPanel').classList.add('show');
   document.getElementById('notFound').classList.remove('show');
+  setStatus(null); applyViewOffset();
   if (!product.rack) { clearHighlight(); setActiveChip(null); return; }
   highlightShelf(product.room, product.rack, product.level); setActiveChip(product.room);
   (product.extra || []).forEach(([r, v]) => {
@@ -769,20 +808,20 @@ function showProduct(sku) {
 function search() {
   const q = document.getElementById('searchInput').value.trim();
   const rp = document.getElementById('resultPanel'), nf = document.getElementById('notFound');
-  if (!q) { rp.classList.remove('show'); nf.classList.remove('show'); hideSuggest(); return; }
+  if (!q) { rp.classList.remove('show'); applyViewOffset(); nf.classList.remove('show'); hideSuggest(); return; }
   const m = matchProducts(q);
-  if (!m.length) { rp.classList.remove('show'); nf.classList.add('show'); hideSuggest(); return; }
+  if (!m.length) { rp.classList.remove('show'); applyViewOffset(); nf.classList.add('show'); hideSuggest(); return; }
   if (m[0].score === 0 || m.length === 1) { showProduct(m[0].sku); return; }
   renderSuggest();
 }
 
 function filterByRoom(zone) {
   document.getElementById('searchInput').value = '';
-  document.getElementById('resultPanel').classList.remove('show');
+  document.getElementById('resultPanel').classList.remove('show'); applyViewOffset();
   document.getElementById('notFound').classList.remove('show');
   clearHighlight(); showRackLabels(zone); focusRoom(zone); setActiveChip(zone);
   const a = WAREHOUSE[zone].aisles;
-  document.getElementById('statsBar').textContent = zone + ': ' + Object.keys(a).length + ' رف، ' + Object.values(a).reduce((s, n) => s + n.length, 0) + ' مستوى';
+  setStatus(zone + ': ' + Object.keys(a).length + ' رف، ' + Object.values(a).reduce((s, n) => s + n.length, 0) + ' مستوى. اضغط مكان فارغ للرجوع');
 }
 function setActiveChip(zone) { currentRoom = zone || null; document.querySelectorAll('.room-chip').forEach(c => c.classList.toggle('active', c.dataset.zone === zone)); }
 function buildChips() {
@@ -795,8 +834,8 @@ function buildChips() {
   });
 }
 function resetView() {
-  clearHighlight(); showRackLabels(null); goOverview(true); setActiveChip(null);
-  document.getElementById('resultPanel').classList.remove('show');
+  clearHighlight(); showRackLabels(null); goOverview(true); setActiveChip(null); setStatus(null);
+  document.getElementById('resultPanel').classList.remove('show'); applyViewOffset();
   document.getElementById('notFound').classList.remove('show');
 }
 document.getElementById('searchBtn').addEventListener('click', search);
@@ -877,9 +916,9 @@ function openEdit() {
   fillEditLevelOptions(p.room, p.rack, p.level);
   document.getElementById('editQty').value = p.qty;
   document.getElementById('editStatus').style.display = 'none';
-  document.getElementById('editForm').classList.add('show');
+  document.getElementById('editForm').classList.add('show'); applyViewOffset();
 }
-function closeEdit() { document.getElementById('editForm').classList.remove('show'); }
+function closeEdit() { document.getElementById('editForm').classList.remove('show'); applyViewOffset(); }
 document.getElementById('editRoom').addEventListener('change', e => {
   fillEditRackOptions(e.target.value, null);
   fillEditLevelOptions(e.target.value, document.getElementById('editRack').value, null);
@@ -924,8 +963,8 @@ function updateStats() {
   const list = Object.values(PRODUCTS);
   const out = list.filter(p => p.qty <= 0).length, low = list.filter(p => p.qty > 0 && p.qty <= LOW_STOCK).length;
   const k = document.getElementById('kpis'); k.innerHTML = '';
-  [['', 'غرفة', 17], ['', 'رف', nAisles], ['', 'مستوى', nLevels], ['', 'منتج', list.length], ['out', 'نافد', out], ['low', 'منخفض', low], ['out', 'بدون موقع', list.filter(p => !p.rack).length]].forEach(([c, l, n]) => {
-    if (c && !n) return;
+  [['meta', 'غرفة', 17], ['meta', 'رف', nAisles], ['meta', 'مستوى', nLevels], ['', 'منتج', list.length], ['out', 'نافد', out], ['low', 'منخفض', low], ['out', 'بدون موقع', list.filter(p => !p.rack).length]].forEach(([c, l, n]) => {
+    if (c && c !== 'meta' && !n) return;
     const e = document.createElement('span'); e.className = 'kpi ' + c;
     const b = document.createElement('b'); b.textContent = n; e.appendChild(b); e.appendChild(document.createTextNode(' ' + l)); k.appendChild(e);
   });
@@ -985,22 +1024,22 @@ document.getElementById('importBtn').addEventListener('click', () => document.ge
 document.getElementById('importFile').addEventListener('change', async e => {
   const f = e.target.files[0]; e.target.value = ''; if (!f) return;
   const bar = document.getElementById('statsBar');
-  bar.textContent = 'جاري قراءة الملف...';
+  setStatus('جاري قراءة الملف...', true);
   try {
     const X = await loadXlsx();
     const wb = X.read(await f.arrayBuffer(), { type: 'array' });
     const { products, report } = rowsToCatalog(X.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' }));
-    if (!report.kept) { bar.textContent = 'ما لقينا منتجات بالملف. تأكد إن الأعمدة مثل ملف النسخة الاحتياطية (ProductCode, Name, StockBalance...)'; return; }
+    if (!report.kept) { setStatus('ما لقينا منتجات بالملف. تأكد إن الأعمدة مثل ملف النسخة الاحتياطية (ProductCode, Name, StockBalance...)', true); return; }
     const cat = { at: Date.now(), products };
     useCatalog(cat);
     try { localStorage.setItem(LS_CATALOG, JSON.stringify(cat)); } catch (err) {}
     let shared = false;
     if (dbRef) { try { await dbRef.doc('catalog/current').set(cat); shared = true; } catch (err) {} }
     resetView(); updateStats();
-    bar.textContent = 'تم استيراد ' + report.kept + ' منتج، وتُرك ' + report.zero + ' بكمية 0' +
+    setStatus('تم استيراد ' + report.kept + ' منتج، وتُرك ' + report.zero + ' بكمية 0' +
       (report.noLoc.length ? '، و' + report.noLoc.length + ' بدون موقع صحيح (' + report.noLoc.slice(0, 5).join('، ') + (report.noLoc.length > 5 ? '…' : '') + ')' : '') +
-      (shared ? ' — محفوظ لكل الأجهزة' : ' — محفوظ على هذا الجهاز');
-  } catch (err) { bar.textContent = 'تعذر قراءة الملف. جرّب تحفظه من جديد بصيغة xlsx.'; }
+      (shared ? ' — محفوظ لكل الأجهزة' : ' — محفوظ على هذا الجهاز'), true);
+  } catch (err) { setStatus('تعذر قراءة الملف. جرّب تحفظه من جديد بصيغة xlsx.', true); }
 });
 initDb().then(updateStats); updateStats();
 </script>
